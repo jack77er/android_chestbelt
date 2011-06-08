@@ -33,6 +33,7 @@ public class BTHandler extends Thread {
 		remote = dev;
 	}
 	
+	// Thread 
     public void run() {
 
     	final int BUFFER_SIZE = 1024*8;
