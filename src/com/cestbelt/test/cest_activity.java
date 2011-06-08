@@ -47,7 +47,7 @@ public class cest_activity extends Activity {
         registerReceiver(bcastReceiver, filter); // Don't forget to unregister during onDestroy
         filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         registerReceiver(bcastReceiver, filter); // Don't forget to unregister during onDestroy
-        
+        // test
         
         remoteDevices = new ArrayList<BluetoothDevice>();
         
