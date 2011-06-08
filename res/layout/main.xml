@@ -1,12 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    >
+    android:layout_height="fill_parent" android:layout_width="match_parent">
 <TextView  
     android:layout_width="fill_parent" 
     android:layout_height="wrap_content" 
-    android:text="@string/hello"
+    android:text="@string/head" 
+    android:gravity="center_vertical|center_horizontal"
+    android:textSize="20px"
+ 	android:textStyle="bold"
+ 	android:textColor="#00ff00"
     />
+<Button 
+	android:layout_width="match_parent" 
+	android:layout_height="wrap_content"
+	android:id="@+id/btnRescan" 
+	android:text="@string/btnRescanText"
+	/>
+	
 </LinearLayout>
