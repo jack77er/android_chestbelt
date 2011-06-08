@@ -3,4 +3,5 @@
     <string name="head">cestbelt monitor</string>
     <string name="app_name">EKG Gürtel</string>
     <string name="btnRescanText">Scan for cestbelt</string>
+    <string name="btnShowPairedText">Show paired devices</string>
 </resources>

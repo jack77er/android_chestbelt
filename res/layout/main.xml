@@ -13,6 +13,12 @@
     />
 <Button 
 	android:layout_width="match_parent" 
+	android:layout_height="wrap_content" 
+	android:id="@+id/btnShowPaired" 
+	android:text="@string/btnShowPairedText" 
+	/>
+<Button 
+	android:layout_width="match_parent" 
 	android:layout_height="wrap_content"
 	android:id="@+id/btnRescan" 
 	android:text="@string/btnRescanText"
