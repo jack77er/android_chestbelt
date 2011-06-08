@@ -24,7 +24,6 @@ public class BTHandler extends Thread {
 	BluetoothDevice remote;
 	
 	public BTHandler(BluetoothDevice dev) {
-		BluetoothSocket s = null;
 		try {
 				sock = dev.createInsecureRfcommSocketToServiceRecord(MY_UUID);
 				sock.connect();
@@ -79,6 +78,7 @@ public class BTHandler extends Thread {
 							if( ptr == length + 5 + 3) {
 								// end of paket reached, execute
 								checkPaket();
+								// TODO hier weiter machen , ACK senden und so nen kram
 							}
 						}
 					}
@@ -100,48 +100,38 @@ public class BTHandler extends Thread {
 	/*
 	 * CRC16 check
 	 */
-	
-	private static short polynomial = (short)0x1021;
-	private short crc;
 
-	  /**
-	   * Dummy Constructor
-	   */
-	  public Crc16()
-	  { 
-	  	crc = (short) 0xFFFF;
-	  }
+	private static short polynomial = (short) 0x1021;
+	private short crc = (short) 0xFFFF;;
 
-	  /**
-	   * Feed a bitstring to the crc calculation (0 < length <= 32).
-	   */
-	  public void add_bits (int bitstring, int length)
-	  {
-	  	int bitmask = 1 << (length - 1);
-	  	do
-		 if (((crc & 0x8000) == 0) ^ ((bitstring & bitmask) == 0 ))
-		 {
-			crc <<= 1;
-			crc ^= polynomial;
-		 }
-		 else
-			crc <<= 1;
-	  	while ((bitmask >>>= 1) != 0);
-	  }
+	/**
+	 * Feed a bitstring to the crc calculation (0 < length <= 32).
+	 */
+	public void add_bits(int bitstring, int length) {
+		int bitmask = 1 << (length - 1);
+		do
+			if (((crc & 0x8000) == 0) ^ ((bitstring & bitmask) == 0)) {
+				crc <<= 1;
+				crc ^= polynomial;
+			} else
+				crc <<= 1;
+		while ((bitmask >>>= 1) != 0);
+	}
 
-	  /**
-	   * Return the calculated checksum.
-	   * Erase it for next calls to add_bits().
-	   */
-	  public short	checksum()
-	  {
-	    short sum = crc;
-	    crc = (short) 0xFFFF;
-	    return sum;
-	  }
-	  
-	  
-	/** 
+	/**
+	 * Return the calculated checksum. Erase it for next calls to add_bits().
+	 */
+	public short checksum() {
+		short sum = crc;
+		crc = (short) 0xFFFF;
+		return sum;
+	}
+
+	/*
+	 * CRC16 end
+	 */
+
+	/**
 	 * 
 	 * @param dev
 	 * @return
