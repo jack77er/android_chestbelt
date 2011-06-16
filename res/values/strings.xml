@@ -4,4 +4,8 @@
     <string name="app_name">EKG Gürtel</string>
     <string name="btnRescanText">Scan for cestbelt</string>
     <string name="btnShowPairedText">Show paired devices</string>
+    <string name="btnPing">send Ping</string>
+    <string name="btnVersion">request cestbelt version</string>
+    <string name="btnReset">reset cestbelt</string>
+    <string name="btnBuzzer">buzzzzzzzz</string>
 </resources>

@@ -60,13 +60,58 @@ public class cest_activity extends Activity {
 			}
           });
         
-        ((Button)findViewById(R.id.btnShowPaired)).setOnClickListener(new OnClickListener() {
+        ((Button)findViewById(R.id.btnPing)).setOnClickListener(new OnClickListener() {
 
 			@Override
 			public void onClick(View arg0) {
-				listPairedDevices();
+				try {
+					BTHandler.getInstance(choosenDevice).sendPingRequest();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			}
           });
+        
+        ((Button)findViewById(R.id.btnVersion)).setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View arg0) {
+				try {
+					BTHandler.getInstance(choosenDevice).sendVersionRequest();
+					BTHandler.getInstance(choosenDevice);
+					BTHandler.closeInstance();
+					// restart me
+					BTHandler.getInstance(choosenDevice).start();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+          });
+        
+        ((Button)findViewById(R.id.btnReset)).setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View arg0) {
+				try {
+					BTHandler.getInstance(choosenDevice).sendResetRequest();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+          });
+
+        ((Button)findViewById(R.id.btnBuzzer)).setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View arg0) {
+				try {
+					BTHandler.getInstance(choosenDevice).sendBuzzerRequest();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+          });
+        
 
     	if(!adapter.isEnabled()) {
     		// bluetooth disabled
