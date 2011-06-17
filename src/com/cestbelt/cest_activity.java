@@ -1,16 +1,21 @@
-package com.cestbelt.test;
+package com.cestbelt;
 
 import java.util.ArrayList;
+import java.util.Currency;
 import java.util.Set;
+
+import com.cestbelt.test.R;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.os.Bundle;
+import android.preference.Preference;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.bluetooth.*;
 import android.content.BroadcastReceiver;
@@ -18,6 +23,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 
 public class cest_activity extends Activity {
 	
@@ -29,7 +35,8 @@ public class cest_activity extends Activity {
 	private boolean btisEnabled = false;
 	
 	static final int DIALOG_BT_SCANNING = 1;
-	
+	private boolean MANUAL_CONNECT = false;
+	private boolean MANUAL_CONNECT_FOUND = false;
 	
 	
 	private ArrayList<BluetoothDevice> remoteDevices;
@@ -47,9 +54,18 @@ public class cest_activity extends Activity {
         registerReceiver(bcastReceiver, filter); // Don't forget to unregister during onDestroy
         filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         registerReceiver(bcastReceiver, filter); // Don't forget to unregister during onDestroy
-        // test
+        
+        // recover old entry
         
         remoteDevices = new ArrayList<BluetoothDevice>();
+        SharedPreferences p = getSharedPreferences("prevBelt", MODE_PRIVATE);
+        String oldMAC = p.getString("prevMAC", "00:00:00:00:00:00");
+        
+        if(!oldMAC.equals("00:00:00:00:00:00")) {
+        	if(adapter.isEnabled() && adapter.getState() == adapter.STATE_ON && !adapter.isDiscovering())
+        	choosenDevice = adapter.getRemoteDevice(oldMAC);
+        } 
+        
         
         setContentView(R.layout.main);
         ((Button)findViewById(R.id.btnRescan)).setOnClickListener(new OnClickListener() {
@@ -65,7 +81,7 @@ public class cest_activity extends Activity {
 			@Override
 			public void onClick(View arg0) {
 				try {
-					BTHandler.getInstance(choosenDevice).sendPingRequest();
+					BTHandler.getInstance(choosenDevice,mainContext).sendPingRequest();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -77,11 +93,11 @@ public class cest_activity extends Activity {
 			@Override
 			public void onClick(View arg0) {
 				try {
-					BTHandler.getInstance(choosenDevice).sendVersionRequest();
-					BTHandler.getInstance(choosenDevice);
-					BTHandler.closeInstance();
+					BTHandler.getInstance(choosenDevice,mainContext).sendVersionRequest();
+					//BTHandler.getInstance(choosenDevice,mainContext);
+					//BTHandler.closeInstance();
 					// restart me
-					BTHandler.getInstance(choosenDevice).start();
+					//BTHandler.getInstance(choosenDevice,mainContext).start();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -93,7 +109,25 @@ public class cest_activity extends Activity {
 			@Override
 			public void onClick(View arg0) {
 				try {
-					BTHandler.getInstance(choosenDevice).sendResetRequest();
+					BTHandler.getInstance(choosenDevice,mainContext).sendResetRequest();
+					BTHandler.destroyInstance();
+					
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+          });
+        
+        ((Button)findViewById(R.id.btnConnect)).setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View arg0) {
+				try {
+					if(choosenDevice != null) {
+						MANUAL_CONNECT = true;
+						MANUAL_CONNECT_FOUND = false;
+						scanForDevices();
+					}
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -105,7 +139,7 @@ public class cest_activity extends Activity {
 			@Override
 			public void onClick(View arg0) {
 				try {
-					BTHandler.getInstance(choosenDevice).sendBuzzerRequest();
+					BTHandler.getInstance(choosenDevice,mainContext).sendBuzzerRequest();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -119,6 +153,22 @@ public class cest_activity extends Activity {
     		startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);    	
     	}
     	
+    }
+    
+    @Override
+    protected void onResume() {
+    	super.onResume();
+        SharedPreferences p = getSharedPreferences("prevBelt", MODE_PRIVATE);
+        String oldMAC = p.getString("prevMAC", "00:00:00:00:00:00");
+        
+        if(!oldMAC.equals("00:00:00:00:00:00")) {
+        	choosenDevice = adapter.getRemoteDevice(oldMAC);
+        	TextView v = (TextView) findViewById(R.id.txtDev);
+        	v.setText("used device: " + oldMAC);
+        } else {
+        	TextView v = (TextView) findViewById(R.id.txtDev);
+        	v.setText("used device: none");
+        }
     }
     
     protected void scanForDevices() {
@@ -137,19 +187,45 @@ public class cest_activity extends Activity {
     		}
     	}	
 	}
+    
+    @Override
+    protected void onPause() {
+    	super.onPause();
+    	SharedPreferences p = getSharedPreferences("prevBelt", MODE_PRIVATE);
+    	SharedPreferences.Editor e = p.edit();
+    	if(choosenDevice != null) {
+    		e.putString("prevMAC", choosenDevice.getAddress());
+        	e.commit();
+    	}
+    }
 
 	@Override
     protected void onDestroy() {
-        super.onDestroy();
+		unregisterReceiver(bcastReceiver);
         
-        unregisterReceiver(bcastReceiver);
+		super.onDestroy();
+    	SharedPreferences p = getSharedPreferences("prevBelt", MODE_PRIVATE);
+    	SharedPreferences.Editor e = p.edit();
+    	if(choosenDevice != null) {
+    		e.putString("prevMAC", choosenDevice.getAddress());
+        	e.commit();
+    	}
         
         if(!btWasEnabled) {
         	// quick and dirty
-        	adapter.disable();
+        	//adapter.disable();
         }
 	}
 
+	protected void onStop() {
+		super.onStop();
+    	SharedPreferences p = getSharedPreferences("prevBelt", MODE_PRIVATE);
+    	SharedPreferences.Editor e = p.edit();
+    	if(choosenDevice != null) {
+    		e.putString("prevMAC", choosenDevice.getAddress());
+        	e.commit();
+    	}
+	}
     /**
      * Method for creating dialogs
      */
@@ -195,28 +271,53 @@ public class cest_activity extends Activity {
                 }
             } else if(action.equals(BluetoothDevice.ACTION_FOUND)) {
             	if(!remoteDevices.contains((BluetoothDevice) intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE))) {
-            		remoteDevices.add((BluetoothDevice) intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE));
+            		BluetoothDevice tmp = (BluetoothDevice) intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+            		if(MANUAL_CONNECT && tmp.getAddress().equals(choosenDevice.getAddress())) {
+            			MANUAL_CONNECT_FOUND = true;
+            			adapter.cancelDiscovery();
+            			dismissDialog(DIALOG_BT_SCANNING);
+            			connectToDevice();
+            		}
+            		remoteDevices.add(tmp);
             	}
             } else if(action.equals(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)) {
-            	AlertDialog.Builder builder = new AlertDialog.Builder(mainContext);
-            	builder.setTitle("Choose a Device");
-            	
-            	final CharSequence[] items = new CharSequence[remoteDevices.size()];
-            	for(int i = 0 ; i < remoteDevices.size() ; i++) {
-            		items[i] = remoteDevices.get(i).getName();
+            	if(MANUAL_CONNECT) {
+            		if(!MANUAL_CONNECT_FOUND) {
+            			// previous device not found
+            			Toast.makeText(getApplicationContext(), "device not found... please rescan", Toast.LENGTH_SHORT).show();
+            		}            		
+            		MANUAL_CONNECT = false;
+            		MANUAL_CONNECT_FOUND = false;
+            		dismissDialog(DIALOG_BT_SCANNING);
+            	} else {
+            		// new scan completed
+	            	AlertDialog.Builder builder = new AlertDialog.Builder(mainContext);
+	            	builder.setTitle("Choose a Device");
+	            	
+	            	final CharSequence[] items = new CharSequence[remoteDevices.size()];
+	            	for(int i = 0 ; i < remoteDevices.size() ; i++) {
+	            		items[i] = remoteDevices.get(i).getName();
+	            	}
+	            	
+	            	builder.setItems(items, new DialogInterface.OnClickListener() {
+	            	    public void onClick(DialogInterface dialog, int item) {
+	            	        choosenDevice = remoteDevices.get(item);
+	            	    	SharedPreferences p = getSharedPreferences("prevBelt", MODE_PRIVATE);
+	            	    	SharedPreferences.Editor e = p.edit();
+	            	    	if(choosenDevice != null) {
+	            	    		e.putString("prevMAC", choosenDevice.getAddress());
+	            	        	e.commit();
+	            	        	TextView v = (TextView) findViewById(R.id.txtDev);
+	            	        	v.setText("used device: " + choosenDevice.getAddress());
+	            	    	}
+	            	        connectToDevice();
+	            	    }
+	            	});
+	            	
+	            	dismissDialog(DIALOG_BT_SCANNING);
+	            	AlertDialog alert = builder.create();
+	            	alert.show();
             	}
-            	
-            	builder.setItems(items, new DialogInterface.OnClickListener() {
-            	    public void onClick(DialogInterface dialog, int item) {
-            	        choosenDevice = remoteDevices.get(item);
-            	        connectToDevice();
-            	    }
-            	});
-            	
-            	dismissDialog(DIALOG_BT_SCANNING);
-            	AlertDialog alert = builder.create();
-            	alert.show();
-            	
             } 
         }
     };
@@ -263,7 +364,9 @@ public class cest_activity extends Activity {
     private void connectToDevice() {
     	if(choosenDevice != null) {
     		if(BluetoothAdapter.checkBluetoothAddress(choosenDevice.getAddress())) {
-    			BTHandler.getInstance(choosenDevice).start();
+    			BTHandler r = BTHandler.getInstance(choosenDevice, this);
+    			r.setParent(this);
+    			r.start();
     		}
     	} else {
     		Toast.makeText(getApplicationContext(), "no device selected", Toast.LENGTH_SHORT).show();

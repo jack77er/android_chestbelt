@@ -1,25 +1,26 @@
-package com.cestbelt.test;
+package com.cestbelt;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.UUID;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
+import android.content.Context;
+import android.widget.Toast;
 
 public class BTHandler extends Thread {
 
 	private static BTHandler instance;
-
+	private static BTSender sender;
+	private Context parent;
+	
 	static final String NAME = "CorBeltServer";
 	static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-	
+	// UUID vom Device: 06-17 22:35:15.522: VERBOSE/CachedBluetoothDevice(2878):   00001101-0000-1000-8000-00805f9b34fb
+
 	final int BUFFER_SIZE = 1024*1024*1;
 	  
 	
@@ -27,34 +28,34 @@ public class BTHandler extends Thread {
 	 * Commands
 	 */
 	
-	static final short CMD_CLOSE_CONNECTION	  = 0x0000;
-	static final short CMD_PING 			  = 0x0001;
-	static final short CMD_RESET 			  = 0x00ff;
-	static final short CMD_PROTOCOL			  = 0x0100;
-	static final short CMD_ACKNOWLEDGE		  = 0x0200;
-	static final short CMD_NOT_ACKNOWLEDGE	  = 0x0300;
-	static final short CMD_REJECT			  = 0x0400;
-	static final short CMD_IDENTIFICATION 	  = 0x0500;
-	static final short CMD_SOFTWARE_VERSION   = 0x0501;
-	static final short CMD_SELF_TEST		  = 0x0600;
-	static final short CMD_CONFIG_EVENTS      = 0x0603;
-	static final short CMD_SET_TIME			  = 0x0610;
-	static final short CMD_CONF_REMOTE_EVENT  = 0x0611;
-	static final short CMD_CONF_MOVE_DETECT   = 0x0612;
-	static final short CMD_CONF_SECURE_MODE   = 0x0613;
-	static final short CMD_SNIFF_MODE_STATE   = 0x06c0;
+	public static final short CMD_CLOSE_CONNECTION	  = 0x0000;
+	public static final short CMD_PING 			  = 0x0001;
+	public static final short CMD_RESET 			  = 0x00ff;
+	public static final short CMD_PROTOCOL			  = 0x0100;
+	public static final short CMD_ACKNOWLEDGE		  = 0x0200;
+	public static final short CMD_NOT_ACKNOWLEDGE	  = 0x0300;
+	public static final short CMD_REJECT			  = 0x0400;
+	public static final short CMD_IDENTIFICATION 	  = 0x0500;
+	public static final short CMD_SOFTWARE_VERSION   = 0x0501;
+	public static final short CMD_SELF_TEST		  = 0x0600;
+	public static final short CMD_CONFIG_EVENTS      = 0x0603;
+	public static final short CMD_SET_TIME			  = 0x0610;
+	public static final short CMD_CONF_REMOTE_EVENT  = 0x0611;
+	public static final short CMD_CONF_MOVE_DETECT   = 0x0612;
+	public static final short CMD_CONF_SECURE_MODE   = 0x0613;
+	public static final short CMD_SNIFF_MODE_STATE   = 0x06c0;
 	// Transmit Data
-	static final short CMD_TX_DATA_START      = 0x0700;
-	static final short CMD_TX_DATA_RUNNING    = 0x0701;
-	static final short CMD_TX_DATA_STOP       = 0x0705;
-	static final short CMD_TX_RECDATA_START   = 0x0710;
-	static final short CMD_TX_RECDATA_RUNNING = 0x0711;
-	static final short CMD_TX_RECDATA_STOP	  = 0x0715;
+	public static final short CMD_TX_DATA_START      = 0x0700;
+	public static final short CMD_TX_DATA_RUNNING    = 0x0701;
+	public static final short CMD_TX_DATA_STOP       = 0x0705;
+	public static final short CMD_TX_RECDATA_START   = 0x0710;
+	public static final short CMD_TX_RECDATA_RUNNING = 0x0711;
+	public static final short CMD_TX_RECDATA_STOP	  = 0x0715;
 	// Request Data
-	static final short CMD_REQUEST_DATA		  = 0x0800;
-	static final short CMD_ENABLE_BUZZER	  = 0x0801;
-	static final short CMD_DISABLE_BUZZER	  = 0x0802;
-	static final short CMD_REQUEST_DATA_STOP  = 0x0805;
+	public static final short CMD_REQUEST_DATA		  = 0x0800;
+	public static final short CMD_ENABLE_BUZZER	  = 0x0801;
+	public static final short CMD_DISABLE_BUZZER	  = 0x0802;
+	public static final short CMD_REQUEST_DATA_STOP  = 0x0805;
 	
 	/*
 	 * Configs
@@ -77,17 +78,48 @@ public class BTHandler extends Thread {
 	private boolean SENDVERSION;
 
 	private boolean SENDBUZZER;
+	private boolean CONNECTED;
+	private boolean RUNNING = true;
 	
-	public BTHandler(BluetoothDevice dev) {
+	public BTHandler(BluetoothDevice dev, Context p) {
+		parent = p;
 		try {
-				sock = dev.createInsecureRfcommSocketToServiceRecord(MY_UUID);
-				sock.connect();
+			/*Timer t = new Timer(); // Watchdog for failed connections
+			t.schedule(new TimerTask(){
+				@Override
+				public void run() {
+						//sock = null;
+						try {
+							sock.close();
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						
+						Toast.makeText(parent, "couldn't connect to the device", Toast.LENGTH_SHORT).show();
+				}}, 5000); //Watchdog timeout = 5000 msec*/
+			sock = dev.createInsecureRfcommSocketToServiceRecord(MY_UUID);
+			sock.connect();
+			//t.cancel(); // kill watchdog
+			Toast.makeText(parent, "connected to " + dev.getAddress(), Toast.LENGTH_SHORT).show();
 		} catch (IOException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			System.out.println("got an exception");
+			cleanUp();
 		}
 		remote = dev;
 	}
 	
+	public Context getParent() {
+		return parent;
+	}
+
+
+	public void setParent(Context parent) {
+		this.parent = parent;
+	}
+
+
 	// Thread 
     public void run() {
     	
@@ -98,40 +130,26 @@ public class BTHandler extends Thread {
     	try {		
 			in = sock.getInputStream();
 			out = sock.getOutputStream();
+			sender = BTSender.getInstance(out);
+			sender.start();
 			
 		} catch (IOException e1) {
 			e1.printStackTrace();
 			return;
 		}
-    	while (true) {
+		
+    	while (RUNNING) {
             if (in != null) {
             	try {
             		short length = 0;
             		short cmd = 0;
             		byte packetNumber = 0;
             		
-					while((data = (byte) in.read()) != -1) {
+					while(((data = (byte) in.read()) != -1) && RUNNING) {
 						// Reset
 						if(RESET) {
-							sendReset();
 							cleanUp();
 							return; // close this thread
-						}
-						// send Ping
-						if(SENDPING) {
-							SENDPING = false;
-							sendPing();
-						}
-						
-						// send Ping
-						if(SENDVERSION) {
-							SENDVERSION = false;
-							sendVersion();
-						}
-						
-						if(SENDBUZZER) {
-							SENDBUZZER = false;
-							sendBuzzer();
 						}
 						
 						
@@ -260,20 +278,16 @@ public class BTHandler extends Thread {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 					cleanUp();
-					closeInstance();
+					destroyInstance();
 					return;
 				}            	
             }
             ptr = 0;
             System.out.println(buffer.toString());
         }
+    	sender.interrupt();
     }
     
-
-	/*
-	 * CRC16 check
-	 */
-
 	private void cleanUp() {
 		if(this.equals(instance)) {
 			try {
@@ -283,13 +297,18 @@ public class BTHandler extends Thread {
 				sock.close();
 				
 			} catch (IOException e) {
-				e.printStackTrace();
+				//e.printStackTrace();
+				return;
 			}
 		}
 		
 	}
 
-	public byte[] crc16ccittCheck(byte[] bytes) { 
+	/*
+	 * CRC16 check
+	 */
+
+	public static byte[] crc16ccittCheck(byte[] bytes) { 
         int crc = 0xFFFF;          // initial value
         int polynomial = 0x1021;   // 0001 0000 0010 0001  (0, 5, 12) 
 
@@ -494,30 +513,33 @@ public class BTHandler extends Thread {
 	 * @param dev
 	 * @return
 	 */
-	public static BTHandler getInstance(BluetoothDevice dev) {
+	public static BTHandler getInstance(BluetoothDevice dev, Context p) {
 		if (instance == null) {
-			instance = new BTHandler(dev);
+			instance = new BTHandler(dev,p);
 		}
 		return instance;
 	}
 
 	public void sendPingRequest() {
-		SENDPING = true;		
+		if(sender != null) sender.sendPingRequest();
 	}
 
 	public void sendVersionRequest() {
-		SENDVERSION = true;		
+		if(sender != null) sender.sendVersionRequest();
 	}
 
 	public void sendResetRequest() {
-		RESET = true;
+		if(sender != null) sender.sendResetRequest();
+		RUNNING = false;
 	}
 
 	public void sendBuzzerRequest() {
-		SENDBUZZER = true;
+		if(sender != null) sender.sendBuzzerRequest();
 	}
 	
-	public static void closeInstance() {
+	public static void destroyInstance() {
 		instance = null;
 	}
+	
+	
 }

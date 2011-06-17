@@ -11,12 +11,11 @@
  	android:textStyle="bold"
  	android:textColor="#00ff00"
     />
+<TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:id="@+id/txtDev" android:text="@string/txtDev"></TextView>
 <Button 
 	android:layout_width="match_parent" 
 	android:layout_height="wrap_content" 
-	android:id="@+id/btnShowPaired" 
-	android:text="@string/btnShowPairedText" 
-	/>
+	android:id="@+id/btnConnect" android:text="@string/btnConnect"/>
 <Button 
 	android:layout_width="match_parent" 
 	android:layout_height="wrap_content"
