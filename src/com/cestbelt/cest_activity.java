@@ -38,6 +38,7 @@ public class cest_activity extends Activity {
 	private boolean MANUAL_CONNECT = false;
 	private boolean MANUAL_CONNECT_FOUND = false;
 	
+	private final int PULSE_ACTIVITY_REQUEST_CODE = 2;
 	
 	private ArrayList<BluetoothDevice> remoteDevices;
 	private BluetoothDevice choosenDevice;
@@ -146,6 +147,25 @@ public class cest_activity extends Activity {
 			}
           });
         
+        
+        ((Button)findViewById(R.id.btnPulseActivity)).setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View arg0) {
+				try {
+					
+					Intent myIntent = new Intent(arg0.getContext(), PulseActivity.class);
+			        Bundle myBundle = new Bundle();
+			        myBundle.putString("Test", "nur ein test");
+			        myIntent.putExtras(myBundle);
+			        myIntent.putExtra("test2", "das ist doch nur ein test");
+			        mainContext.startActivity(myIntent);
+					
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+          });
 
     	if(!adapter.isEnabled()) {
     		// bluetooth disabled

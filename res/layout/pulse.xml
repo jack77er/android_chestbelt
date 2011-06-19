@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_height="fill_parent" android:layout_width="match_parent">
+    
+    <TextView android:text="@string/activityPulse"     
+    android:layout_width="fill_parent" 
+    android:layout_height="wrap_content" 
+    android:gravity="center_vertical|center_horizontal"
+    android:textSize="20px"
+ 	android:textStyle="bold"
+ 	android:textColor="#00ff00" 
+ 	android:id="@+id/textView1"></TextView>
+    <TextView android:layout_height="wrap_content" android:text="@string/textCurrentPulse" android:layout_width="wrap_content" android:editable="true" android:textColor="#ff0000" android:textSize="20px" android:id="@+id/textCurrentPulse"></TextView>
+    
+    <com.cestbelt.Panel android:layout_width="wrap_content"
+    android:layout_height="wrap_content" android:maxHeight="40dip" android:id="@+id/SurfaceView">
+    </com.cestbelt.Panel>
+ </LinearLayout>

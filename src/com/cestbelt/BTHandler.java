@@ -160,7 +160,7 @@ public class BTHandler extends Thread {
 							break;
 						case 4:
 							// command
-							// vertausch wgn. big endian Ÿbertragung
+							// vertausch wgn. big endian ï¿½bertragung
 							cmd = (short) (buffer[3] << 8);
 							cmd |= (short) (buffer[2]);
 							break;

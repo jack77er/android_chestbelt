@@ -26,5 +26,6 @@
 <Button android:layout_height="wrap_content" android:id="@+id/btnVersion" android:layout_width="match_parent" android:text="@string/btnVersion"></Button>
 <Button android:layout_width="match_parent" android:layout_height="wrap_content" android:id="@+id/btnReset" android:text="@string/btnReset"></Button>
 <Button android:layout_width="match_parent" android:layout_height="wrap_content" android:id="@+id/btnBuzzer" android:text="@string/btnBuzzer"></Button>
+<Button android:layout_height="wrap_content" android:text="@string/btnPulse" android:layout_width="match_parent" android:id="@+id/btnPulseActivity"></Button>
 	
 </LinearLayout>

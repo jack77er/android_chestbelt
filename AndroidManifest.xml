@@ -16,6 +16,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name="com.cestbelt.PulseActivity" android:label="@string/activityPulse" android:launchMode="standard">
+            <intent-filter></intent-filter>
+        </activity>
 
     </application>
 </manifest>

@@ -10,4 +10,8 @@
     <string name="btnBuzzer">buzzzzzzzz</string>
     <string name="txtDev">used device:</string>
     <string name="btnConnect">connect to cestbelt</string>
+    <string name="btnPulse">view pulse</string>
+    <string name="activityPulse">pulsemeter</string>
+    <string name="textCurrentPulse">current pulse:</string>
+    
 </resources>
