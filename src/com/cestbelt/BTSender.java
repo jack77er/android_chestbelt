@@ -12,7 +12,9 @@ public class BTSender extends Thread {
 
 	static BTSender instance;
 	
-	public static enum sendCMD { SENDPING, SENDVERSION, SENDBUZZER, SENDACK, SENDREQUEST, SENDRESET }; 
+	public Object synchonizer = new Object();
+
+	public static enum sendCMD { SENDPING, SENDVERSION, SENDBUZZER, SENDACK, SENDREQUEST, SENDRESET, SENDPULSE }; 
 	
 	OutputStream out;
 	ArrayList<sendCMD> jobs;
@@ -26,7 +28,15 @@ public class BTSender extends Thread {
 		jobs = new ArrayList<sendCMD>();
 		RUNNING = true;
 	}
+	
+	public Object getSynchonizer() {
+		return synchonizer;
+	}
 
+	public void setSynchonizer(Object synchonizer) {
+		this.synchonizer = synchonizer;
+	}
+	
 	public void run() {
 		if(out == null) {
 			throw new IllegalArgumentException("no output stream referenced");
@@ -39,12 +49,20 @@ public class BTSender extends Thread {
 			}
 			try {
 				// TODO hier weiter machen wait/notify einbauen um 100% auslastung zu umgehen
-				this.wait();
+				synchronized (synchonizer) {
+					synchonizer.wait();
+				}
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
+		try {
+			out.flush();
+			out.close();
+		} catch (IOException e) {
+			out = null;
+		}		
 		destroyInstance();
 	}
 
@@ -65,13 +83,20 @@ public class BTSender extends Thread {
 		case SENDRESET:
 			sendReset();
 			break;
+		case SENDPULSE:
+			sendPulse();
+			break;
 		}
 
 	}
 	
+	@Override
 	public synchronized void interrupt() {
 		if(RUNNING) {
 			RUNNING  = false;
+			synchronized(synchonizer) {
+				synchonizer.notifyAll();
+			}
 		} else {
 			try {
 				throw new InterruptedException("thread already requested to interrupt!");
@@ -112,23 +137,38 @@ public class BTSender extends Thread {
 	
 
 	public void sendPingRequest() {
-		jobs.add(sendCMD.SENDPING);		
-		this.notify();
+		jobs.add(sendCMD.SENDPING);	
+		synchronized(synchonizer) {
+			synchonizer.notifyAll();
+		}
 	}
 
 	public void sendVersionRequest() {
-		jobs.add(sendCMD.SENDVERSION);			
-		this.notify();
+		jobs.add(sendCMD.SENDVERSION);
+		synchronized(synchonizer) {
+			synchonizer.notifyAll();
+		}
 	}
 
 	public void sendResetRequest() {
 		jobs.add(sendCMD.SENDRESET);			
-		this.notify();
+		synchronized(synchonizer) {
+			synchonizer.notifyAll();
+		}
 	}
 
 	public void sendBuzzerRequest() {
 		jobs.add(sendCMD.SENDBUZZER);			
-		this.notify();
+		synchronized(synchonizer) {
+			synchonizer.notifyAll();
+		}
+	}
+	
+	public void sendPulseRequest() {
+		jobs.add(sendCMD.SENDPULSE);			
+		synchronized(synchonizer) {
+			synchonizer.notifyAll();
+		}
 	}
 	
 	private synchronized void sendPing() {
@@ -174,6 +214,33 @@ public class BTSender extends Thread {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		}
+	}
+	
+
+	
+	private synchronized void sendPulse() {
+		if(out != null) {
+			byte[] toSend = new byte[9];
+			System.out.println("outgoing: CMD_REQUEST_DATA");
+			toSend[0] = BTHandler.STARTBYTE;						// Startflag
+			toSend[1] = (byte)(0xff & getPacketnumber());	// running Packetnumber
+			toSend[2] = (byte) BTHandler.CMD_REQUEST_DATA;  // Command (upper part)
+			toSend[3] = (byte) (BTHandler.CMD_REQUEST_DATA >> 8);		// Command (lower part)
+			toSend[4] = (byte) BTHandler.CMD_TX_DATA_START;  // Payload Command (upper part)
+			toSend[5] = (byte) (BTHandler.CMD_TX_DATA_START >> 8);		// Payload Command (lower part)			
+			byte[] crc = BTHandler.crc16ccittCheck(Arrays.copyOfRange(toSend, 1, 6));
+			toSend[6] = crc[0];
+			toSend[7] = crc[1];
+			toSend[8] = BTHandler.STOPBYTE;
+			try {
+				out.write(toSend);
+				out.flush();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 		}
 	}
 	
@@ -288,5 +355,9 @@ public class BTSender extends Thread {
 	
 	public static void destroyInstance() {
 		instance = null;
+	}
+	
+	public synchronized void closeConnection() {
+		interrupt();		
 	}
 }

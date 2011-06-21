@@ -4,12 +4,8 @@ import java.util.Random;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.util.AttributeSet;
 import android.view.SurfaceView;
-import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
-
 import com.cestbelt.test.R;
 
 public class PulseActivity extends Activity{
@@ -46,6 +42,33 @@ public class PulseActivity extends Activity{
         surfaceView.addPulseValue(100);
         surfaceView.addPulseValue(170);
         currentPulse.setText("current pulse: " + 210 );
+        surfaceView.addPulseValue(210);
+        surfaceView.addPulseValue(200);
+        surfaceView.addPulseValue(200);
+        surfaceView.addPulseValue(200);
+        surfaceView.addPulseValue(100);
+        surfaceView.addPulseValue(150);
+        surfaceView.addPulseValue(150);
+        surfaceView.addPulseValue(180);
+        surfaceView.addPulseValue(180);
+        surfaceView.addPulseValue(210);
+        surfaceView.addPulseValue(200);
+        surfaceView.addPulseValue(200);
+        surfaceView.addPulseValue(200);
+        surfaceView.addPulseValue(100);
+        surfaceView.addPulseValue(150);
+        surfaceView.addPulseValue(150);
+        surfaceView.addPulseValue(180);
+        surfaceView.addPulseValue(180);
+        surfaceView.addPulseValue(210);
+        surfaceView.addPulseValue(200);
+        surfaceView.addPulseValue(200);
+        surfaceView.addPulseValue(200);
+        surfaceView.addPulseValue(100);
+        surfaceView.addPulseValue(150);
+        surfaceView.addPulseValue(150);
+        surfaceView.addPulseValue(180);
+        surfaceView.addPulseValue(180);
         surfaceView.addPulseValue(210);
         surfaceView.addPulseValue(200);
         surfaceView.addPulseValue(200);

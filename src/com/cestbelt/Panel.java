@@ -1,7 +1,6 @@
 package com.cestbelt;
 
 import java.util.Iterator;
-import java.util.Random;
 import java.util.Vector;
 
 import android.content.Context;
@@ -11,10 +10,6 @@ import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.widget.Button;
-import android.widget.EditText;
-
-import com.cestbelt.test.R;
 
 class Panel extends SurfaceView implements SurfaceHolder.Callback {
 	public Vector<Integer> pulse = new Vector<Integer>();
@@ -115,13 +110,21 @@ class Panel extends SurfaceView implements SurfaceHolder.Callback {
             	   canvas.drawLine(50+i, 220,50+i, 220 - stopY, paint);
                }
                
-               
-        
-               
        }
 	   
 	   public void addPulseValue(int value){
        	pulse.add(value);
        }
+	   
+	   public void addPulseValues(byte[] input ) {
+		   
+	   }
+	   
+	   private static int getPulseValue(byte[] input) {
+		   if(input.length != 2) {
+			   return -1;
+		   }
+		   return 1; // TODO Dummy value
+	   }
 }
 

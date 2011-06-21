@@ -94,11 +94,7 @@ public class cest_activity extends Activity {
 			@Override
 			public void onClick(View arg0) {
 				try {
-					BTHandler.getInstance(choosenDevice,mainContext).sendVersionRequest();
-					//BTHandler.getInstance(choosenDevice,mainContext);
-					//BTHandler.closeInstance();
-					// restart me
-					//BTHandler.getInstance(choosenDevice,mainContext).start();
+					BTHandler.getInstance(choosenDevice,mainContext).sendPulseRequest();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -217,6 +213,8 @@ public class cest_activity extends Activity {
     		e.putString("prevMAC", choosenDevice.getAddress());
         	e.commit();
     	}
+
+    	
     }
 
 	@Override
@@ -231,14 +229,20 @@ public class cest_activity extends Activity {
         	e.commit();
     	}
         
+    	BTHandler.getInstance(choosenDevice, mainContext).closeConnection();
+    	BTHandler.destroyInstance();
+    	
         if(!btWasEnabled) {
         	// quick and dirty
         	//adapter.disable();
         }
+        
+        
 	}
 
 	protected void onStop() {
 		super.onStop();
+		
     	SharedPreferences p = getSharedPreferences("prevBelt", MODE_PRIVATE);
     	SharedPreferences.Editor e = p.edit();
     	if(choosenDevice != null) {
@@ -296,6 +300,7 @@ public class cest_activity extends Activity {
             			MANUAL_CONNECT_FOUND = true;
             			adapter.cancelDiscovery();
             			dismissDialog(DIALOG_BT_SCANNING);
+            			choosenDevice = tmp;
             			connectToDevice();
             		}
             		remoteDevices.add(tmp);

@@ -191,7 +191,7 @@ public class BTHandler extends Thread {
 								case CMD_TX_DATA_RUNNING:
 									System.out.println("income: CMD_TX_DATA_RUNNING");
 									sendAcknowledge(packetNumber);
-									// TODO DATEN Auswerten
+									System.out.println("rate: " + buffer[219]);
 									break;
 								case CMD_TX_DATA_STOP:
 									System.out.println("income: CMD_TX_DATA_STOP");
@@ -203,6 +203,7 @@ public class BTHandler extends Thread {
 								case CMD_TX_RECDATA_RUNNING:
 									System.out.println("income: CMD_TX_RECDATA_RUNNING");
 									sendAcknowledge(packetNumber);
+									System.out.println("rate: " + buffer[219]);
 									// TODO DATEN Auswerten
 									break;	
 								case CMD_TX_RECDATA_STOP:
@@ -291,9 +292,9 @@ public class BTHandler extends Thread {
 	private void cleanUp() {
 		if(this.equals(instance)) {
 			try {
+				sender.interrupt();
 				in.close();
-				out.flush();
-				out.close();
+				// TODO manchmal klemmt er hier wenn er ins onDestroy kippt
 				sock.close();
 				
 			} catch (IOException e) {
@@ -523,6 +524,10 @@ public class BTHandler extends Thread {
 	public void sendPingRequest() {
 		if(sender != null) sender.sendPingRequest();
 	}
+	
+	public void sendPulseRequest() {
+		if(sender != null) sender.sendPulseRequest();
+	}
 
 	public void sendVersionRequest() {
 		if(sender != null) sender.sendVersionRequest();
@@ -540,6 +545,13 @@ public class BTHandler extends Thread {
 	public static void destroyInstance() {
 		instance = null;
 	}
+
+	public void closeConnection() {
+		RUNNING = false;
+		sender.interrupt();
+		cleanUp();
+	}
+	
 	
 	
 }
