@@ -8,16 +8,14 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 
-import com.cestbelt.test.R;
-
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Looper;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class BTHandler extends Thread {
@@ -25,6 +23,7 @@ public class BTHandler extends Thread {
 	private static BTHandler instance;
 	private static BTSender sender;
 	private Context parent;
+	private Activity myActivity;
 	
 	static final String NAME = "CorBeltServer";
 	static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
@@ -119,7 +118,7 @@ public class BTHandler extends Thread {
 	// Thread 
     public void run() {
     	
-    	byte[] buffer = new byte[BUFFER_SIZE];
+    	final byte[] buffer = new byte[BUFFER_SIZE];
     	byte data = 0;
     	int ptr = 0;
     	
@@ -127,12 +126,14 @@ public class BTHandler extends Thread {
     	try {	
 			sock = remote.createInsecureRfcommSocketToServiceRecord(MY_UUID);
     		// For Toasts ...
-    		//Looper.prepare();
-    		//Looper.loop();
     		sock.connect();
 			//t.cancel(); // kill watchdog
 			//Toast.makeText(parent, "connected to " + remote.getAddress(), Toast.LENGTH_SHORT).show();
-		
+    		((Activity)parent).runOnUiThread(new Runnable() {
+    		    public void run() {
+    		        Toast.makeText(parent, "connected to " + remote.getAddress(), Toast.LENGTH_SHORT).show();
+    		    }
+    		});
 			in = sock.getInputStream();
 			out = sock.getOutputStream();
 			sender = BTSender.getInstance(out);
@@ -196,15 +197,22 @@ public class BTHandler extends Thread {
 								case CMD_TX_DATA_RUNNING:
 									System.out.println("income: CMD_TX_DATA_RUNNING");
 									sender.sendAcknowledge(packetNumber);
-									System.out.println("rate: " + buffer[220]);
-									if(displayPanel != null) {
-										displayPanel.addPulseValue((int)buffer[220]);
-										/*Intent myIntent = new Intent(PulseActivity.NEW_PULSE_DATA);
+									if(buffer[220] > 0) {
+							    		((Activity)parent).runOnUiThread(new Runnable() {
+							    		    public void run() {
+									    		TextView v = (TextView) ((Activity) parent).findViewById(R.id.txtPulse);
+					            	        	v.setText("current pulse: " + String.valueOf((int)buffer[220]));
+						    		        }
+							    		});
+									}
+									//if(displayPanel != null) {
+										//displayPanel.addPulseValue((int)buffer[220]);
+										/*Intent myIntent = new Intent(parent.getApplicationContext(), PulseActivity.class);
 								        Bundle myBundle = new Bundle();
 								        myBundle.putInt("pulseValue", (int)buffer[220]);
 								        myIntent.putExtras(myBundle);
-								        parent.startService(myIntent);*/
-									}
+								        parent.getApplicationContext().startActivity(myIntent);*/
+									//}
 									// caution - just trying									
 									break;
 								case CMD_TX_DATA_STOP:
@@ -593,7 +601,7 @@ public class BTHandler extends Thread {
 		if(sender != null) {
 			sender.interrupt();
 		}
-		//cleanUp();
+		cleanUp();
 	}
 	
 	

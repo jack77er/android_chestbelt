@@ -1,17 +1,15 @@
 package com.cestbelt;
 
 import java.util.ArrayList;
-import java.util.Currency;
 import java.util.Set;
 
-import com.cestbelt.test.R;
+import com.cestbelt.R;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.os.Bundle;
-import android.preference.Preference;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;

@@ -14,5 +14,6 @@
     <string name="activityPulse">pulsemeter</string>
     <string name="textCurrentPulse">current pulse:</string>
     <string name="btnDisconnect">close connection</string>
+    <string name="txtPulse">current pulse:</string>
     
 </resources>

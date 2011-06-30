@@ -3,21 +3,14 @@ package com.cestbelt;
 import java.util.Random;
 
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.SurfaceView;
 import android.widget.TextView;
-import android.widget.Toast;
-
-import com.cestbelt.test.R;
+import com.cestbelt.R;
 
 public class PulseActivity extends Activity{
 	

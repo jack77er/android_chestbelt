@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="com.cestbelt.test"
+      package="com.cestbelt"
       android:versionCode="1"
       android:versionName="1.0">
     <uses-sdk></uses-sdk>
@@ -19,6 +19,6 @@
         <activity android:name="com.cestbelt.PulseActivity" android:label="@string/activityPulse" android:launchMode="standard">
             <intent-filter></intent-filter>
         </activity>
-
+		<service android:name=".BTHandler" />
     </application>
 </manifest>
