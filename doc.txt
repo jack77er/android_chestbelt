@@ -9,4 +9,4 @@
 06-23 16:05:17.698: INFO//system/bin/btld(5590): send_ctrl_msg: [BTL_IFS CTRL] send BTLIF_DTUN_SIGNAL_EVT (CTRL) 11 pbytes (hdl 18)
 
 
-Disconnect des GŸrtels bei Reste mit laufender Verbindung
+Disconnect des GŸrtels bei Reset mit laufender Verbindung

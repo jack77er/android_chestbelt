@@ -15,6 +15,8 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
 import android.os.Looper;
 import android.widget.Toast;
 
@@ -79,6 +81,8 @@ public class BTHandler extends Thread {
 	BluetoothDevice remote;	  
 	InputStream in;
 	OutputStream out;
+	
+	private Panel displayPanel;
 
 	private boolean RESET;
 	private boolean SENDPING;
@@ -92,8 +96,16 @@ public class BTHandler extends Thread {
 	public BTHandler(BluetoothDevice dev, Context p) {
 		parent = p;
 		remote = dev;
-	}
+	}	
 	
+	public Panel getDisplayPanel() {
+		return displayPanel;
+	}
+
+	public void setDisplayPanel(Panel displayPanel) {
+		this.displayPanel = displayPanel;
+	}
+
 	public Context getParent() {
 		return parent;
 	}
@@ -185,6 +197,14 @@ public class BTHandler extends Thread {
 									System.out.println("income: CMD_TX_DATA_RUNNING");
 									sender.sendAcknowledge(packetNumber);
 									System.out.println("rate: " + buffer[220]);
+									if(displayPanel != null) {
+										displayPanel.addPulseValue((int)buffer[220]);
+										/*Intent myIntent = new Intent(PulseActivity.NEW_PULSE_DATA);
+								        Bundle myBundle = new Bundle();
+								        myBundle.putInt("pulseValue", (int)buffer[220]);
+								        myIntent.putExtras(myBundle);
+								        parent.startService(myIntent);*/
+									}
 									// caution - just trying									
 									break;
 								case CMD_TX_DATA_STOP:
