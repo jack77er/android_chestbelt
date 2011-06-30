@@ -19,6 +19,8 @@ public class CanvasThread extends Thread {
     public void setRunning(boolean run) {
         _run = run;
     }
+    
+    
  
     @Override
     public void run() {

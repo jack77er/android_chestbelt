@@ -42,9 +42,10 @@ class Panel extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
             // TODO Auto-generated method stub
-    		pulse = null;
+    		//pulse = null;
             boolean retry = true;
             canvasthread.setRunning(false);
+            
             while (retry) {
                     try {
                             canvasthread.join();

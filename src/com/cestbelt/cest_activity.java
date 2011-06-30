@@ -155,6 +155,9 @@ public class cest_activity extends Activity {
 			        myIntent.putExtra("test2", "das ist doch nur ein test");
 			        mainContext.startActivity(myIntent);
 			        
+			        
+			        //sendBroadcast(myIntent);
+			        
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
