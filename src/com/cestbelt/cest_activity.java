@@ -162,7 +162,19 @@ public class cest_activity extends Activity {
 				}
 			}
           });
+        
+        ((Button)findViewById(R.id.btnDisconnect)).setOnClickListener(new OnClickListener() {
 
+			@Override
+			public void onClick(View arg0) {
+				try {
+					BTHandler.getInstance(choosenDevice, mainContext).closeConnection();
+					
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+          });
     	if(!adapter.isEnabled()) {
     		// bluetooth disabled
     		Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -390,6 +402,10 @@ public class cest_activity extends Activity {
     	if(choosenDevice != null) {
     		if(BluetoothAdapter.checkBluetoothAddress(choosenDevice.getAddress())) {
     			BTHandler r = BTHandler.getInstance(choosenDevice, this);
+    			if(r.isAlive()) {
+    				r.closeConnection();
+    				
+    			}
     			r.setParent(this);
     			r.start();
     		}
@@ -401,7 +417,6 @@ public class cest_activity extends Activity {
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if (requestCode == REQUEST_ENABLE_BT) {
-			System.out.println(resultCode);
 			if (resultCode == RESULT_CANCELED) {
 				Toast.makeText(getApplicationContext(), "bt not available", Toast.LENGTH_SHORT).show();	
 				btisEnabled = false;

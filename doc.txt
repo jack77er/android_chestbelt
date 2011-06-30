@@ -1,0 +1,12 @@
+06-23 16:05:17.698: INFO/BluetoothHIDService(1398): Received intent Intent { act=android.bluetooth.device.action.ACL_DISCONNECTED (has extras) }, device = 00:A0:96:2B:51:36
+06-23 16:05:17.698: INFO/BluetoothHIDService(1398):     ...ACL disconnected
+06-23 16:05:17.698: INFO//system/bin/btld(5590): jw_if_rfcomm_cl_cback: jw_if_rfcomm_cl_cback event=BTA_JV_RFCOMM_CLOSE_EVT
+06-23 16:05:17.698: INFO//system/bin/btld(5590): jv_rfc_close: hdl 2, status 1, remotely initiated 1, result 16, port status 1075875148
+06-23 16:05:17.698: INFO//system/bin/btld(5590): bts_free_tx_queue: freeing full tx queue
+06-23 16:05:17.698: INFO//system/bin/btld(5590): jv_rfc_close: scn  1, sock 57
+06-23 16:05:17.698: INFO//system/bin/btld(5590): send_ctrl_msg: [BTL_IFS CTRL] send BTLIF_BTS_RFC_DISC_IND (BTS) 9 pbytes (hdl 30)
+06-23 16:05:17.698: INFO//system/bin/btld(5590): ##### ERROR : tx_data:  failed : Bad file number (-1) #####
+06-23 16:05:17.698: INFO//system/bin/btld(5590): send_ctrl_msg: [BTL_IFS CTRL] send BTLIF_DTUN_SIGNAL_EVT (CTRL) 11 pbytes (hdl 18)
+
+
+Disconnect des GŸrtels bei Reste mit laufender Verbindung

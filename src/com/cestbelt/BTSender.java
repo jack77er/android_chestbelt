@@ -48,7 +48,6 @@ public class BTSender extends Thread {
 				jobs.remove(0);
 			}
 			try {
-				// TODO hier weiter machen wait/notify einbauen um 100% auslastung zu umgehen
 				synchronized (synchonizer) {
 					synchonizer.wait();
 				}
@@ -109,7 +108,7 @@ public class BTSender extends Thread {
 	}
 
 
-	private synchronized void sendDataRequest() {
+	synchronized void sendDataRequest() {
 		if(out != null) {
 			byte[] toSend = new byte[10];
 			System.out.println("outgoing: CMD_REQUEST_DATA");
@@ -221,18 +220,20 @@ public class BTSender extends Thread {
 	
 	private synchronized void sendPulse() {
 		if(out != null) {
-			byte[] toSend = new byte[9];
+			byte[] toSend = new byte[10];
 			System.out.println("outgoing: CMD_REQUEST_DATA");
+
 			toSend[0] = BTHandler.STARTBYTE;						// Startflag
-			toSend[1] = (byte)(0xff & getPacketnumber());	// running Packetnumber
+			toSend[1] = (byte) (0xff & getPacketnumber());				// running Packetnumber
 			toSend[2] = (byte) BTHandler.CMD_REQUEST_DATA;  // Command (upper part)
 			toSend[3] = (byte) (BTHandler.CMD_REQUEST_DATA >> 8);		// Command (lower part)
-			toSend[4] = (byte) BTHandler.CMD_TX_DATA_START;  // Payload Command (upper part)
-			toSend[5] = (byte) (BTHandler.CMD_TX_DATA_START >> 8);		// Payload Command (lower part)			
-			byte[] crc = BTHandler.crc16ccittCheck(Arrays.copyOfRange(toSend, 1, 6));
-			toSend[6] = crc[0];
-			toSend[7] = crc[1];
-			toSend[8] = BTHandler.STOPBYTE;
+			toSend[4] = (byte) 0x02;					// length of payload
+			toSend[5] = (byte) BTHandler.CMD_TX_DATA_START;// payload
+			toSend[6] = (byte) (BTHandler.CMD_TX_DATA_START >> 8);	// payload
+			byte[] crc = BTHandler.crc16ccittCheck(Arrays.copyOfRange(toSend, 1, 7));
+			toSend[7] = crc[0];
+			toSend[8] = crc[1];
+			toSend[9] = BTHandler.STOPBYTE;
 			try {
 				out.write(toSend);
 				out.flush();
@@ -244,7 +245,7 @@ public class BTSender extends Thread {
 		}
 	}
 	
-	private synchronized void sendAcknowledge(byte packetNumber) {
+	synchronized void sendAcknowledge(byte packetNumber) {
 		if(out != null) {
 			byte[] toSend = new byte[9];
 			System.out.println("outgoing: CMD_ACKNOWLEDGE");
@@ -268,7 +269,7 @@ public class BTSender extends Thread {
 		}
 	}
 	
-	private synchronized void sendReject(byte packetNumber) {
+	synchronized void sendReject(byte packetNumber) {
 		if(out != null) {
 			byte[] toSend = new byte[9];
 			System.out.println("outgoing: CMD_REQUEST_DATA");

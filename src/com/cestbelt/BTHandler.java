@@ -4,11 +4,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
+import com.cestbelt.test.R;
+
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.os.Looper;
 import android.widget.Toast;
 
 public class BTHandler extends Thread {
@@ -23,6 +30,7 @@ public class BTHandler extends Thread {
 
 	final int BUFFER_SIZE = 1024*1024*1;
 	  
+	// TODO Keep Alive Timer mit Ping CMD
 	
 	/*
 	 * Commands
@@ -83,30 +91,6 @@ public class BTHandler extends Thread {
 	
 	public BTHandler(BluetoothDevice dev, Context p) {
 		parent = p;
-		try {
-			/*Timer t = new Timer(); // Watchdog for failed connections
-			t.schedule(new TimerTask(){
-				@Override
-				public void run() {
-						//sock = null;
-						try {
-							sock.close();
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-						
-						Toast.makeText(parent, "couldn't connect to the device", Toast.LENGTH_SHORT).show();
-				}}, 5000); //Watchdog timeout = 5000 msec*/
-			sock = dev.createInsecureRfcommSocketToServiceRecord(MY_UUID);
-			sock.connect();
-			//t.cancel(); // kill watchdog
-			Toast.makeText(parent, "connected to " + dev.getAddress(), Toast.LENGTH_SHORT).show();
-		} catch (IOException e) {
-			//e.printStackTrace();
-			System.out.println("got an exception");
-			cleanUp();
-		}
 		remote = dev;
 	}
 	
@@ -126,8 +110,17 @@ public class BTHandler extends Thread {
     	byte[] buffer = new byte[BUFFER_SIZE];
     	byte data = 0;
     	int ptr = 0;
-  
-    	try {		
+    	
+		
+    	try {	
+			sock = remote.createInsecureRfcommSocketToServiceRecord(MY_UUID);
+    		// For Toasts ...
+    		//Looper.prepare();
+    		//Looper.loop();
+    		sock.connect();
+			//t.cancel(); // kill watchdog
+			//Toast.makeText(parent, "connected to " + remote.getAddress(), Toast.LENGTH_SHORT).show();
+		
 			in = sock.getInputStream();
 			out = sock.getOutputStream();
 			sender = BTSender.getInstance(out);
@@ -178,7 +171,7 @@ public class BTHandler extends Thread {
 									System.out.println("crc check ok");									
 								} else {
 									System.out.println("crc check fail");
-									sendReject(packetNumber);
+									sender.sendReject(packetNumber);
 									ptr = 0;
 									break;
 								}
@@ -186,23 +179,24 @@ public class BTHandler extends Thread {
 								switch(cmd) {
 								case CMD_TX_DATA_START:
 									System.out.println("income: CMD_TX_DATA_START");
-									sendDataRequest();
+									sender.sendDataRequest();
 									break;
 								case CMD_TX_DATA_RUNNING:
 									System.out.println("income: CMD_TX_DATA_RUNNING");
-									sendAcknowledge(packetNumber);
-									System.out.println("rate: " + buffer[219]);
+									sender.sendAcknowledge(packetNumber);
+									System.out.println("rate: " + buffer[220]);
+									// caution - just trying									
 									break;
 								case CMD_TX_DATA_STOP:
 									System.out.println("income: CMD_TX_DATA_STOP");
-									sendAcknowledge(packetNumber);
+									sender.sendAcknowledge(packetNumber);
 									break;
 								case CMD_TX_RECDATA_START:
 									System.out.println("income: CMD_TX_RECDATA_START");
 									break;		
 								case CMD_TX_RECDATA_RUNNING:
 									System.out.println("income: CMD_TX_RECDATA_RUNNING");
-									sendAcknowledge(packetNumber);
+									sender.sendAcknowledge(packetNumber);
 									System.out.println("rate: " + buffer[219]);
 									// TODO DATEN Auswerten
 									break;	
@@ -268,7 +262,7 @@ public class BTHandler extends Thread {
 									break;	
 								default:
 									System.out.println("error: unknown command");
-									sendReject(packetNumber);
+									sender.sendReject(packetNumber);
 								}
 								ptr = 0;
 							}
@@ -284,20 +278,47 @@ public class BTHandler extends Thread {
 				}            	
             }
             ptr = 0;
-            System.out.println(buffer.toString());
+           
         }
     	sender.interrupt();
+
+		cleanUp();
+		destroyInstance();
     }
     
+	private void sendAcknowledge(byte packetNumber2) {
+		// TODO Auto-generated method stub
+		
+	}
+
 	private void cleanUp() {
 		if(this.equals(instance)) {
 			try {
-				sender.interrupt();
-				in.close();
+				if(sender != null) {
+					sender.interrupt();
+				}
+				if(in != null) {
+					in.close();
+				}
+				Timer wd = new Timer();
+				wd.schedule(new TimerTask(){
+
+					@Override
+					public void run() {
+						// hard killing thread
+						instance.interrupt();
+						instance = null;
+						BluetoothAdapter.getDefaultAdapter().disable();
+						BluetoothAdapter.getDefaultAdapter().enable();
+						
+					}}, 3000);
 				// TODO manchmal klemmt er hier wenn er ins onDestroy kippt
-				sock.close();
-				
-			} catch (IOException e) {
+				if( sock != null) {
+					sock.close();						
+				}
+				wd.cancel();
+				wd.purge();
+			} catch (Exception e) {
 				//e.printStackTrace();
 				return;
 			}
@@ -309,6 +330,7 @@ public class BTHandler extends Thread {
 	 * CRC16 check
 	 */
 
+	
 	public static byte[] crc16ccittCheck(byte[] bytes) { 
         int crc = 0xFFFF;          // initial value
         int polynomial = 0x1021;   // 0001 0000 0010 0001  (0, 5, 12) 
@@ -336,7 +358,7 @@ public class BTHandler extends Thread {
 	/*
 	 * CRC16 end
 	 */
-
+/*
 	private synchronized void sendDataRequest() {
 		if(out != null) {
 			byte[] toSend = new byte[10];
@@ -496,7 +518,7 @@ public class BTHandler extends Thread {
 			}
 		}
 	}
-	
+	*/
 	public void resetCestbelt() {
 		RESET = true;
 	}
@@ -548,8 +570,10 @@ public class BTHandler extends Thread {
 
 	public void closeConnection() {
 		RUNNING = false;
-		sender.interrupt();
-		cleanUp();
+		if(sender != null) {
+			sender.interrupt();
+		}
+		//cleanUp();
 	}
 	
 	

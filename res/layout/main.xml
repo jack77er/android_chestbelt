@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
-    android:layout_height="fill_parent" android:layout_width="match_parent">
+    android:layout_width="match_parent" android:layout_height="wrap_content">
 <TextView  
     android:layout_width="fill_parent" 
     android:layout_height="wrap_content" 
@@ -12,20 +12,17 @@
  	android:textColor="#00ff00"
     />
 <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:id="@+id/txtDev" android:text="@string/txtDev"></TextView>
-<Button 
-	android:layout_width="match_parent" 
-	android:layout_height="wrap_content" 
-	android:id="@+id/btnConnect" android:text="@string/btnConnect"/>
-<Button 
-	android:layout_width="match_parent" 
-	android:layout_height="wrap_content"
-	android:id="@+id/btnRescan" 
-	android:text="@string/btnRescanText"
-	/>
-<Button android:layout_width="match_parent" android:layout_height="wrap_content" android:id="@+id/btnPing" android:text="@string/btnPing"></Button>
-<Button android:layout_height="wrap_content" android:id="@+id/btnVersion" android:layout_width="match_parent" android:text="@string/btnVersion"></Button>
-<Button android:layout_width="match_parent" android:layout_height="wrap_content" android:id="@+id/btnReset" android:text="@string/btnReset"></Button>
-<Button android:layout_width="match_parent" android:layout_height="wrap_content" android:id="@+id/btnBuzzer" android:text="@string/btnBuzzer"></Button>
-<Button android:layout_height="wrap_content" android:text="@string/btnPulse" android:layout_width="match_parent" android:id="@+id/btnPulseActivity"></Button>
+<ScrollView android:layout_height="wrap_content" android:id="@+id/scrollView1" android:layout_width="match_parent">
+    <LinearLayout android:layout_width="match_parent" android:id="@+id/linearLayout1" android:layout_height="match_parent" android:orientation="vertical">
+        <Button android:id="@+id/btnConnect" android:layout_height="wrap_content" android:text="@string/btnConnect" android:layout_width="match_parent"></Button>
+        <Button android:id="@+id/btnRescan" android:layout_height="wrap_content" android:text="@string/btnRescanText" android:layout_width="match_parent"></Button>
+        <Button android:id="@+id/btnPing" android:layout_height="wrap_content" android:text="@string/btnPing" android:layout_width="match_parent"></Button>
+        <Button android:id="@+id/btnVersion" android:layout_height="wrap_content" android:text="@string/btnVersion" android:layout_width="match_parent"></Button>
+        <Button android:id="@+id/btnReset" android:layout_height="wrap_content" android:text="@string/btnReset" android:layout_width="match_parent"></Button>
+        <Button android:id="@+id/btnBuzzer" android:layout_height="wrap_content" android:text="@string/btnBuzzer" android:layout_width="match_parent"></Button>
+        <Button android:id="@+id/btnDisconnect" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/btnDisconnect"></Button>
+        <Button android:id="@+id/btnPulseActivity" android:layout_height="wrap_content" android:text="@string/btnPulse" android:layout_width="match_parent"></Button>
+    </LinearLayout>
+</ScrollView>
 	
 </LinearLayout>
