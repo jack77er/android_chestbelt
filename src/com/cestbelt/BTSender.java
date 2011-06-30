@@ -38,6 +38,7 @@ public class BTSender extends Thread {
 	}
 	
 	public void run() {
+		this.setName("BT Sender");
 		if(out == null) {
 			throw new IllegalArgumentException("no output stream referenced");
 		}

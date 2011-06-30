@@ -13,8 +13,8 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
-import android.content.Intent;
-import android.os.Bundle;
+import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnCompletionListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -91,6 +91,7 @@ public class BTHandler extends Thread {
 	private boolean SENDBUZZER;
 	private boolean CONNECTED;
 	private boolean RUNNING = true;
+	private MediaPlayer mMediaPlayer;
 	
 	public BTHandler(BluetoothDevice dev, Context p) {
 		parent = p;
@@ -117,7 +118,7 @@ public class BTHandler extends Thread {
 
 	// Thread 
     public void run() {
-    	
+    	this.setName("BT Handler");
     	final byte[] buffer = new byte[BUFFER_SIZE];
     	byte data = 0;
     	int ptr = 0;
@@ -202,6 +203,7 @@ public class BTHandler extends Thread {
 							    		    public void run() {
 									    		TextView v = (TextView) ((Activity) parent).findViewById(R.id.txtPulse);
 					            	        	v.setText("current pulse: " + String.valueOf((int)buffer[220]));
+					            	        	playAudio();
 						    		        }
 							    		});
 									}
@@ -604,6 +606,24 @@ public class BTHandler extends Thread {
 		cleanUp();
 	}
 	
+	private void playAudio() {
+		try {
+			if(mMediaPlayer == null) {
+				// http://www.soundjay.com/beep-sounds-1.html lots of free beeps here
+				mMediaPlayer = MediaPlayer.create(parent, R.raw.beep1);
+				mMediaPlayer.setLooping(false);
+				mMediaPlayer.setOnCompletionListener(new OnCompletionListener() {
+					public void onCompletion(MediaPlayer arg0) {
+						//finish();
+					}
+				});
+			}
+			mMediaPlayer.start();
+			//     Log.e("beep","started1");
+
+		} catch (Exception e) {
+		}
+	}
 	
 	
 }
