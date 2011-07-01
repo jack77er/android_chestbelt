@@ -208,13 +208,14 @@ public class BTHandler extends Thread {
 							    		});
 									}
 									//if(displayPanel != null) {
-										//displayPanel.addPulseValue((int)buffer[220]);
+									//	displayPanel.addPulseValue((int)buffer[220]);
 										/*Intent myIntent = new Intent(parent.getApplicationContext(), PulseActivity.class);
 								        Bundle myBundle = new Bundle();
 								        myBundle.putInt("pulseValue", (int)buffer[220]);
 								        myIntent.putExtras(myBundle);
 								        parent.getApplicationContext().startActivity(myIntent);*/
 									//}
+								
 									// caution - just trying									
 									break;
 								case CMD_TX_DATA_STOP:
@@ -286,6 +287,7 @@ public class BTHandler extends Thread {
 									break;	
 								case CMD_REQUEST_DATA:
 									System.out.println("income: CMD_REQUEST_DATA");
+									// TODO requestData senden
 									break;	
 								case CMD_REJECT:
 									System.out.println("income: CMD_REJECT");

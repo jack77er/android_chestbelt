@@ -52,7 +52,7 @@ public class PulseActivity extends Activity{
         
         Panel surfaceView = (Panel) this.findViewById(R.id.SurfaceView);
 //        currentPulse.setText("Text" + test );
-        
+        surfaceView.setPulseIntent(getIntent());
         
         for (int i = 0; i< 150; i++){
 	        surfaceView.addPulseValue(50);
@@ -64,6 +64,9 @@ public class PulseActivity extends Activity{
         }
         BTHandler.getInstance(null, null).setDisplayPanel(surfaceView);
 	}
+	
+	
+	
 	
     private final BroadcastReceiver bcastReceiver = new BroadcastReceiver() {
         @Override
