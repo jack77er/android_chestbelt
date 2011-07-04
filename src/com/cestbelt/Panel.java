@@ -8,38 +8,28 @@ import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.os.Handler;
 import android.util.AttributeSet;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.os.Handler;
 
 class Panel extends SurfaceView implements SurfaceHolder.Callback {
 	public Vector<Integer> pulse = new Vector<Integer>();
-	private Intent pulseIntent;
+
 	private CanvasThread canvasthread;
-	private PulseHandler pulseHandler;
-    
+    private Intent pulseIntent;
+	
 	public Panel(Context context, AttributeSet attrs) {
           super(context, attrs);
           // TODO Auto-generated constructor stub
       getHolder().addCallback(this);
       canvasthread = new CanvasThread(getHolder(), this);
-      
-      if(PulseHandler.getInstance() !=null)
-      pulseHandler = new PulseHandler(this,pulseIntent);
-      
       setFocusable(true);
       
   }
 	
-	
-	
-    public void setPulseIntent(Intent pulseIntent) {
-		this.pulseIntent = pulseIntent;
-	}
-
-
-
-	@Override
+    @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width,
                     int height) {
             // TODO Auto-generated method stub
@@ -50,8 +40,8 @@ class Panel extends SurfaceView implements SurfaceHolder.Callback {
             // TODO Auto-generated method stub
         canvasthread.setRunning(true);
         canvasthread.start();
-        pulseHandler.start();
-           
+
+
     }
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
@@ -64,6 +54,7 @@ class Panel extends SurfaceView implements SurfaceHolder.Callback {
                     try {
                             canvasthread.join();
                             retry = false;
+//                            pulseHandler.stop();
                     } catch (InterruptedException e) {
                             // we will try it again and again...
                     }
@@ -72,7 +63,7 @@ class Panel extends SurfaceView implements SurfaceHolder.Callback {
     }
  
 	   @Override
-       public void onDraw(Canvas canvas) {
+       synchronized public void onDraw(Canvas canvas) {
 		   super.onDraw(canvas);
 		   
 		   
@@ -127,11 +118,23 @@ class Panel extends SurfaceView implements SurfaceHolder.Callback {
                
        }
 	   
-	   public void addPulseValue(int value){
+	   public void setIntent(Intent intent){
+		   pulseIntent = intent;
+	   }
+	   
+	   synchronized public void addPulseValue(int value){
        	pulse.add(value);
        }
 	   
+	   public void addPulseValues(byte[] input ) {
+		   
+	   }
 	   
-	   
+	   private static int getPulseValue(byte[] input) {
+		   if(input.length != 2) {
+			   return -1;
+		   }
+		   return 1; // TODO Dummy value
+	   }
 }
 

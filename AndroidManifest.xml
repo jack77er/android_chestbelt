@@ -6,6 +6,9 @@
     <uses-sdk></uses-sdk>
     <uses-permission android:name="android.permission.BLUETOOTH"></uses-permission>
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"></uses-permission>
+    	 <permission 
+         android:name="com.cestbelt.PulseActivity.NEW_PULSE_DATA" > 
+     </permission>
 
 
     <application android:icon="@drawable/icon" android:label="@string/app_name" android:debuggable="true">
@@ -20,5 +23,12 @@
             <intent-filter></intent-filter>
         </activity>
 		<service android:name=".BTHandler" />
+		<receiver android:name="com.cestbelt.test">
+			<intent-filter android:label="com.cestbelt.cest_activity.NEW_PULSE_DATA"></intent-filter>
+			    	 <permission 
+         android:name="com.cestbelt.cest_activity.NEW_PULSE_DATA" > 
+     </permission>
+		</receiver>
+ 
     </application>
 </manifest>

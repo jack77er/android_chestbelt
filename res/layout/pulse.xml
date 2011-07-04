@@ -14,7 +14,7 @@
     <TextView android:layout_height="wrap_content" android:text="@string/textCurrentPulse" android:layout_width="wrap_content" android:editable="true" android:textColor="#ff0000" android:textSize="20px" android:id="@+id/textCurrentPulse"></TextView>
     
     <com.cestbelt.Panel android:layout_width="wrap_content"
-    android:layout_height="wrap_content" android:maxHeight="40dip" android:id="@+id/SurfaceView">
+    android:layout_height="wrap_content" android:maxHeight="40dip" android:id="@+id/SurfaceView2">
     </com.cestbelt.Panel>
  </LinearLayout>
     
