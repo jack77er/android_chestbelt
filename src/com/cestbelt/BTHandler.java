@@ -21,21 +21,27 @@ import android.widget.Toast;
 
 public class BTHandler extends Thread {
 
+	// the singleton instance
 	private static BTHandler instance;
+	// sender singleton instance
 	private static BTSender sender;
-	private Context parent;
-	private Activity myActivity;
 	
+	// the parent activity for gui output
+	private Context parent;
+	
+	// the name for the BT RFCOMM Service
 	static final String NAME = "CorBeltServer";
+	// UUID for the RFCOMM Service
 	static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 	// UUID vom Device: 06-17 22:35:15.522: VERBOSE/CachedBluetoothDevice(2878):   00001101-0000-1000-8000-00805f9b34fb
 
-	final int BUFFER_SIZE = 1024*1024*1;
+	// the buffer size for the income buffer
+	final int BUFFER_SIZE = 1024*4;
 	  
 	// TODO Keep Alive Timer mit Ping CMD
 	
 	/*
-	 * Commands
+	 * Commands - see specification for further information
 	 */
 	
 	public static final short CMD_CLOSE_CONNECTION	  = 0x0000;
@@ -76,28 +82,36 @@ public class BTHandler extends Thread {
 	
 	private byte PACKETNUMBER				  = 0x0;
 	
-	
-	BluetoothSocket sock;	
-	BluetoothDevice remote;	  
+	// the choosen remote device
+	BluetoothDevice remote;
+	// BT I/O Streams
+	BluetoothSocket sock;	  
 	InputStream in;
 	OutputStream out;
 	
+	// pulseoutput
 	private SurfaceView displayPanel;
 
+	// variable for resetting the connection
 	private boolean RESET;
-	private boolean SENDPING;
-
-	private boolean SENDVERSION;
-
-	private boolean SENDBUZZER;
-	private boolean CONNECTED;
+	
+	// variable for thread running
 	private boolean RUNNING = true;
+	
+	// mediaplayer for playing the sound (ping) 
 	private MediaPlayer mMediaPlayer;
 	
+	/**
+	 * Constructor
+	 * @param dev the remote Bluetooth device
+	 * @param p the parent activity
+	 */
 	public BTHandler(BluetoothDevice dev, Context p) {
 		parent = p;
 		remote = dev;
 	}	
+	
+	/* Setter / Getter */
 	
 	public SurfaceView getDisplayPanel() {
 		return displayPanel;
@@ -119,27 +133,30 @@ public class BTHandler extends Thread {
 
 	// Thread 
     public void run() {
+    	
     	this.setName("BT Handler");
+    	// create local buffer
     	final byte[] buffer = new byte[BUFFER_SIZE];
+    	// last read byte
     	byte data = 0;
+    	// arraypointer
     	int ptr = 0;
     	
-    	
-        
-		
     	try {	
+    		// try to create a new insecure connection
 			sock = remote.createInsecureRfcommSocketToServiceRecord(MY_UUID);
-    		// For Toasts ...
+    		// and connect
     		sock.connect();
-			//t.cancel(); // kill watchdog
-			//Toast.makeText(parent, "connected to " + remote.getAddress(), Toast.LENGTH_SHORT).show();
+			// send a msg for the user 
     		((Activity)parent).runOnUiThread(new Runnable() {
     		    public void run() {
     		        Toast.makeText(parent, "connected to " + remote.getAddress(), Toast.LENGTH_SHORT).show();
     		    }
     		});
+    		// set all strams
 			in = sock.getInputStream();
 			out = sock.getOutputStream();
+			// create a sender thread and run it
 			sender = BTSender.getInstance(out);
 			sender.start();
 			
@@ -147,13 +164,14 @@ public class BTHandler extends Thread {
 			e1.printStackTrace();
 			return;
 		}
-		
+		// endless loop (till RUNNING = true)
     	while (RUNNING) {
             if (in != null) {
             	try {
-            		short length = 0;
-            		short cmd = 0;
-            		byte packetNumber = 0;
+            		// local variables for the current packet
+            		short length = 0; // packetlength
+            		short cmd = 0; // command in this packet
+            		byte packetNumber = 0; // # of this packet
             		
 					while(((data = (byte) in.read()) != -1) && RUNNING) {
 						// Reset
@@ -162,15 +180,15 @@ public class BTHandler extends Thread {
 							return; // close this thread
 						}
 						
-						
 						buffer[ptr++] = data;
 						switch(ptr) {
 						case 2:
+							// packet number read
 							packetNumber = (byte) buffer[1]; 
 							break;
 						case 4:
 							// command
-							// vertausch wgn. big endian �bertragung
+							// vertausch wgn. big endian uebertragung
 							cmd = (short) (buffer[3] << 8);
 							cmd |= (short) (buffer[2]);
 							break;
@@ -180,49 +198,49 @@ public class BTHandler extends Thread {
 							break;
 						}
 						if ( ptr > 5 ) {
-							//if( ptr == length + 5 + 3) {
 							if(data == STOPBYTE) {
 								// end of packet reached, execute
+								// check the packet with the crc check
 								byte[] crcCheck = crc16ccittCheck(Arrays.copyOfRange(buffer, 1, length + 5));
 								if(crcCheck[0] == buffer[length + 5] && crcCheck[1] == buffer[length + 6]) {
+									// packet ok
 									System.out.println("crc check ok");									
 								} else {
 									System.out.println("crc check fail");
+									// check failed - rejeck current packet
 									sender.sendReject(packetNumber);
+									// set pointer to start
 									ptr = 0;
 									break;
 								}
 								
+								// execute the Command
 								switch(cmd) {
 								case CMD_TX_DATA_START:
 									System.out.println("income: CMD_TX_DATA_START");
+									// cestbelt request for sending new data
 									sender.sendDataRequest();
 									break;
 								case CMD_TX_DATA_RUNNING:
 									System.out.println("income: CMD_TX_DATA_RUNNING");
+									// data valid - ACK it
 									sender.sendAcknowledge(packetNumber);
+									// read out just the pulse value at index 220
 									if(buffer[220] > 0) {
+										// value is available ( > 0 )
 							    		((Activity)parent).runOnUiThread(new Runnable() {
 							    		    public void run() {
+							    		    	// update the user interface
 									    		TextView v = (TextView) ((Activity) parent).findViewById(R.id.txtPulse);
 					            	        	v.setText("current pulse: " + String.valueOf((int)buffer[220]));
 					            	        	if(displayPanel != null) {
 													((Panel)displayPanel).addPulseValue((int)buffer[220]);
-													/*Intent myIntent = new Intent(parent.getApplicationContext(), PulseActivity.class);
-											        Bundle myBundle = new Bundle();
-											        myBundle.putInt("pulseValue", (int)buffer[220]);
-											        myIntent.putExtras(myBundle);
-											        parent.getApplicationContext().startActivity(myIntent);*/
 												}
+					            	        	// beep
 					            	        	playAudio();
 						    		        }
 							    		});
-									}
-									
-								
-	
-									
-									// caution - just trying									
+									}						
 									break;
 								case CMD_TX_DATA_STOP:
 									System.out.println("income: CMD_TX_DATA_STOP");
@@ -232,15 +250,30 @@ public class BTHandler extends Thread {
 									System.out.println("income: CMD_TX_RECDATA_START");
 									break;		
 								case CMD_TX_RECDATA_RUNNING:
+									// see @CMD_TX_DATA_RUNNING
 									System.out.println("income: CMD_TX_RECDATA_RUNNING");
 									sender.sendAcknowledge(packetNumber);
 									System.out.println("rate: " + buffer[219]);
-									// TODO DATEN Auswerten
+									if(buffer[220] > 0) {
+							    		((Activity)parent).runOnUiThread(new Runnable() {
+							    		    public void run() {
+									    		TextView v = (TextView) ((Activity) parent).findViewById(R.id.txtPulse);
+					            	        	v.setText("current pulse: " + String.valueOf((int)buffer[220]));
+					            	        	if(displayPanel != null) {
+													((Panel)displayPanel).addPulseValue((int)buffer[220]);
+
+												}
+					            	        	playAudio();
+						    		        }
+							    		});
+									}
 									break;	
 								case CMD_TX_RECDATA_STOP:
+									sender.sendAcknowledge(packetNumber);
 									System.out.println("income: CMD_TX_RECDATA_STOP");
 									break;	
 								case CMD_CLOSE_CONNECTION:
+									// unused by cestbelt
 									System.out.println("income: CMD_CLOSE_CONNECTION");
 									break;	
 								case CMD_PING:
@@ -293,7 +326,8 @@ public class BTHandler extends Thread {
 									break;	
 								case CMD_REQUEST_DATA:
 									System.out.println("income: CMD_REQUEST_DATA");
-									// TODO requestData senden
+									// cestbelt is in idyle - start sending data
+									if(sender != null) sender.sendPulseRequest();
 									break;	
 								case CMD_REJECT:
 									System.out.println("income: CMD_REJECT");
@@ -307,37 +341,34 @@ public class BTHandler extends Thread {
 						}
 					}
 				} catch (IOException e) {
-					ptr = 0;
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-					cleanUp();
-					destroyInstance();
+					// clean up the local environment
+					ptr = 0; // reset pointer
+					cleanUp(); // close connection
+					destroyInstance(); // destroy singleton instance
 					return;
 				}            	
             }
             ptr = 0;
            
         }
-    	sender.interrupt();
-
+    	// thread should carefully end
+    	// close the local streams and sockets
 		cleanUp();
 		destroyInstance();
     }
     
-	private void sendAcknowledge(byte packetNumber2) {
-		// TODO Auto-generated method stub
-		
-	}
-
 	private void cleanUp() {
 		if(this.equals(instance)) {
 			try {
 				if(sender != null) {
-					sender.interrupt();
+			    	// end the sender thread
+			    	sender.interrupt();
 				}
 				if(in != null) {
+					// close InputStream
 					in.close();
 				}
+				// watchdog if thread get deadlocked 
 				Timer wd = new Timer();
 				wd.schedule(new TimerTask(){
 
@@ -346,34 +377,32 @@ public class BTHandler extends Thread {
 						// hard killing thread
 						instance.interrupt();
 						instance = null;
+						// restart BT adapter
 						BluetoothAdapter.getDefaultAdapter().disable();
 						BluetoothAdapter.getDefaultAdapter().enable();
 						
 					}}, 3000);
 				// TODO manchmal klemmt er hier wenn er ins onDestroy kippt
 				if( sock != null) {
+					// close the socket
 					sock.close();						
 				}
+				// kill the watchdag if all went ok
 				wd.cancel();
 				wd.purge();
 			} catch (Exception e) {
-				//e.printStackTrace();
 				return;
 			}
 		}
 		
 	}
 
-	/*
-	 * CRC16 check
+	/**
+	 * CRC16 check (CCITT)
 	 */
-
-	
 	public static byte[] crc16ccittCheck(byte[] bytes) { 
         int crc = 0xFFFF;          // initial value
         int polynomial = 0x1021;   // 0001 0000 0010 0001  (0, 5, 12) 
-
-        // byte[] testBytes = "123456789".getBytes("ASCII");
 
         for (byte b : bytes) {
             for (int i = 0; i < 8; i++) {
@@ -383,7 +412,6 @@ public class BTHandler extends Thread {
                 if (c15 ^ bit) crc ^= polynomial;
              }
         }
-
         crc &= 0xffff;
         System.out.println("CRC16-CCITT = " + Integer.toHexString(crc));
         byte[] ret = new byte[2];
@@ -392,176 +420,18 @@ public class BTHandler extends Thread {
         ret[0] = (byte) (crc);
         return ret;
     }
-
-	/*
-	 * CRC16 end
+	
+	/**
+	 * Get the Thread to Reset the cestbelt and itself
 	 */
-/*
-	private synchronized void sendDataRequest() {
-		if(out != null) {
-			byte[] toSend = new byte[10];
-			System.out.println("outgoing: CMD_REQUEST_DATA");
-			toSend[0] = STARTBYTE;						// Startflag
-			toSend[1] = getPacketnumber();				// running Packetnumber
-			toSend[2] = (byte) CMD_REQUEST_DATA;  // Command (upper part)
-			toSend[3] = (byte) (CMD_REQUEST_DATA >> 8);		// Command (lower part)
-			toSend[4] = (byte) 0x02;					// length of payload
-			toSend[5] = (byte) CMD_TX_DATA_RUNNING;// payload
-			toSend[6] = (byte) (CMD_TX_DATA_RUNNING >> 8);	// payload
-			byte[] crc = crc16ccittCheck(Arrays.copyOfRange(toSend, 1, 7));
-			toSend[7] = crc[0];
-			toSend[8] = crc[1];
-			toSend[9] = STOPBYTE;
-			try {
-				out.write(toSend);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-		}
-	}
-	
-	private synchronized void sendPing() {
-		if(out != null) {
-			byte[] toSend = new byte[8];
-			System.out.println("outgoing: CMD_PING");
-			toSend[0] = STARTBYTE;						// Startflag
-			toSend[1] = getPacketnumber();				// running Packetnumber
-			toSend[2] = (byte) CMD_PING;  // Command (upper part)
-			toSend[3] = (byte) (CMD_PING >> 8);		// Command (lower part)
-			toSend[4] = (byte) 0x00;
-			byte[] crc = crc16ccittCheck(Arrays.copyOfRange(toSend, 1, 5));
-			toSend[5] = crc[0];
-			toSend[6] = crc[1];
-			toSend[7] = STOPBYTE;
-			try {
-				out.write(toSend);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-		}
-	}
-
-	private synchronized void sendReset() {
-		if(out != null) {
-			byte[] toSend = new byte[8];
-			System.out.println("outgoing: CMD_ACKNOWLEDGE");
-			toSend[0] = STARTBYTE;						// Startflag
-			toSend[1] = getPacketnumber();				// running Packetnumber
-			toSend[2] = (byte) CMD_RESET;  // Command (upper part)
-			toSend[3] = (byte) (CMD_RESET >> 8);		// Command (lower part)
-			toSend[4] = (byte) 0x00;					// length of payload
-			byte[] crc = crc16ccittCheck(Arrays.copyOfRange(toSend, 1, 5));
-			toSend[5] = crc[0];
-			toSend[6] = crc[1];
-			toSend[7] = STOPBYTE;
-			try {
-				out.write(toSend);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-	}
-	
-	private synchronized void sendAcknowledge(byte packetNumber) {
-		if(out != null) {
-			byte[] toSend = new byte[9];
-			System.out.println("outgoing: CMD_ACKNOWLEDGE");
-			toSend[0] = STARTBYTE;						// Startflag
-			toSend[1] = getPacketnumber();				// running Packetnumber
-			toSend[2] = (byte) CMD_ACKNOWLEDGE;  		// Command (upper part)
-			toSend[3] = (byte) (CMD_ACKNOWLEDGE >> 8);	// Command (lower part)
-			toSend[4] = (byte) 0x01;					// length of payload
-			toSend[5] = packetNumber;
-			byte[] crc = crc16ccittCheck(Arrays.copyOfRange(toSend, 1, 6));
-			toSend[6] = crc[0];
-			toSend[7] = crc[1];
-			toSend[8] = STOPBYTE;
-			try {
-				out.write(toSend);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-	}
-	
-	private synchronized void sendReject(byte packetNumber) {
-		if(out != null) {
-			byte[] toSend = new byte[9];
-			System.out.println("outgoing: CMD_REQUEST_DATA");
-			toSend[0] = STARTBYTE;						// Startflag
-			toSend[1] = getPacketnumber();				// running Packetnumber
-			toSend[2] = (byte) CMD_REJECT;  			// Command (upper part)
-			toSend[3] = (byte) (CMD_REJECT >> 8);		// Command (lower part)
-			toSend[4] = (byte) 0x01;					// length of payload
-			toSend[5] = packetNumber;
-			byte[] crc = crc16ccittCheck(Arrays.copyOfRange(toSend, 1, 6));
-			toSend[6] = crc[0];
-			toSend[7] = crc[1];
-			toSend[8] = STOPBYTE;
-			try {
-				out.write(toSend);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-	}
-	
-	private synchronized void sendVersion() {
-		if(out != null) {
-			byte[] toSend = new byte[8];
-			System.out.println("outgoing: CMD_SOFTWARE_VERSION");
-			toSend[0] = STARTBYTE;						// Startflag
-			toSend[1] = getPacketnumber();		    	// running Packetnumber
-			toSend[2] = (byte) CMD_SOFTWARE_VERSION;  			// Command (upper part)
-			toSend[3] = (byte) (CMD_SOFTWARE_VERSION >> 8);		// Command (lower part)
-			toSend[4] = (byte) 0x00;					// length of payload
-			byte[] crc = crc16ccittCheck(Arrays.copyOfRange(toSend, 1, 5));
-			toSend[5] = crc[0];
-			toSend[6] = crc[1];
-			toSend[7] = STOPBYTE;
-			try {
-				out.write(toSend);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-	}
-	
-	private synchronized void sendBuzzer() {
-		if(out != null) {
-			byte[] toSend = new byte[8];
-			System.out.println("outgoing: CMD_ENABLE_BUZZER");
-			toSend[0] = STARTBYTE;						// Startflag
-			toSend[1] = getPacketnumber();		    	// running Packetnumber
-			toSend[2] = (byte) CMD_ENABLE_BUZZER;  			// Command (upper part)
-			toSend[3] = (byte) (CMD_ENABLE_BUZZER >> 8);		// Command (lower part)
-			toSend[4] = (byte) 0x00;					// length of payload
-			byte[] crc = crc16ccittCheck(Arrays.copyOfRange(toSend, 1, 5));
-			toSend[5] = crc[0];
-			toSend[6] = crc[1];
-			toSend[7] = STOPBYTE;
-			try {
-				out.write(toSend);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-	}
-	*/
 	public void resetCestbelt() {
 		RESET = true;
 	}
 	
-	
+	/**
+	 * Increment the packetNumber and return the new value
+	 * @return the new packetNumber
+	 */
 	public byte getPacketnumber() {
 		if(PACKETNUMBER >= 251) {
 			PACKETNUMBER = 0;
@@ -570,9 +440,10 @@ public class BTHandler extends Thread {
 	}
 	
 	/**
-	 * 
-	 * @param dev
-	 * @return
+	 * Singleton implementation
+	 * @param dev the remote BT Device
+	 * @param p the parent activity
+	 * @return the Singleton instance
 	 */
 	public static BTHandler getInstance(BluetoothDevice dev, Context p) {
 		if (instance == null) {
@@ -580,7 +451,8 @@ public class BTHandler extends Thread {
 		}
 		return instance;
 	}
-
+	
+	/* send Request through the sender */
 	public void sendPingRequest() {
 		if(sender != null) sender.sendPingRequest();
 	}
@@ -602,10 +474,16 @@ public class BTHandler extends Thread {
 		if(sender != null) sender.sendBuzzerRequest();
 	}
 	
+	/**
+	 * kill this instance
+	 */
 	public static void destroyInstance() {
 		instance = null;
 	}
 
+	/**
+	 * Carefull close this thread ans subthread
+	 */
 	public void closeConnection() {
 		RUNNING = false;
 		if(sender != null) {
@@ -614,6 +492,9 @@ public class BTHandler extends Thread {
 		cleanUp();
 	}
 	
+	/**
+	 * Simply plays the beep sound when new data is income
+	 */
 	private void playAudio() {
 		try {
 			if(mMediaPlayer == null) {
@@ -627,11 +508,9 @@ public class BTHandler extends Thread {
 				});
 			}
 			mMediaPlayer.start();
-			//     Log.e("beep","started1");
 
 		} catch (Exception e) {
 		}
 	}
-	
 	
 }

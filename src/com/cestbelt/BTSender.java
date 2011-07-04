@@ -10,25 +10,37 @@ import java.util.Arrays;
 
 public class BTSender extends Thread {
 
+	// Singleton instance
 	static BTSender instance;
-	
+	// Object for thread synchronisation
 	public Object synchonizer = new Object();
 
+	// Commands for sending stored as an enum
 	public static enum sendCMD { SENDPING, SENDVERSION, SENDBUZZER, SENDACK, SENDREQUEST, SENDRESET, SENDPULSE }; 
 	
+	// the BT outputstream
 	OutputStream out;
+	// tje joblist - globaly defined
 	ArrayList<sendCMD> jobs;
 
-
+	// running packetNumber
 	private short PACKETNUMBER;
+	// running thread variable
 	private boolean RUNNING;
 	
+	/**
+	 * Constructor 
+	 * @param o the OutputStream from the BT Socket
+	 */
 	public BTSender(OutputStream o) {
 		out = o;
+		// initiate the Joblist
 		jobs = new ArrayList<sendCMD>();
+		// set Thread running to true
 		RUNNING = true;
 	}
 	
+	/* GETTER / SETTER */
 	public Object getSynchonizer() {
 		return synchonizer;
 	}
@@ -37,6 +49,7 @@ public class BTSender extends Thread {
 		this.synchonizer = synchonizer;
 	}
 	
+	// Thread
 	public void run() {
 		this.setName("BT Sender");
 		if(out == null) {
@@ -44,20 +57,23 @@ public class BTSender extends Thread {
 		}
 		// infinite loop
 		while(RUNNING) {
-			if(jobs.size() > 0) {
+			// Execute jobs if needed
+			while(jobs.size() > 0) {
 				executeJob(jobs.get(0));
 				jobs.remove(0);
 			}
+			
 			try {
+				// wait at synchronizer if all jobs done
 				synchronized (synchonizer) {
 					synchonizer.wait();
 				}
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
 		}
+		// thread ended carefull
 		try {
+			// flush and close outputstream
 			out.flush();
 			out.close();
 		} catch (IOException e) {
@@ -66,6 +82,10 @@ public class BTSender extends Thread {
 		destroyInstance();
 	}
 
+	/**
+	 * execute a Job from the Joblist
+	 * @param s
+	 */
 	private void executeJob(sendCMD s) {
 		switch (s) {
 		case SENDPING:
@@ -89,7 +109,9 @@ public class BTSender extends Thread {
 		}
 
 	}
-	
+	/**
+	 * stop the thread carefully
+	 */
 	@Override
 	public synchronized void interrupt() {
 		if(RUNNING) {
@@ -101,14 +123,15 @@ public class BTSender extends Thread {
 			try {
 				throw new InterruptedException("thread already requested to interrupt!");
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
 		}
 		
 	}
 
 
+	/**
+	 * send the command to the cestbelt to send new pulse data
+	 */
 	synchronized void sendDataRequest() {
 		if(out != null) {
 			byte[] toSend = new byte[10];
@@ -135,7 +158,9 @@ public class BTSender extends Thread {
 		}
 	}
 	
-
+	/**
+	 * add a new Job to the Joblist
+	 */
 	public void sendPingRequest() {
 		jobs.add(sendCMD.SENDPING);	
 		synchronized(synchonizer) {
@@ -143,6 +168,9 @@ public class BTSender extends Thread {
 		}
 	}
 
+	/**
+	 * add a new Job to the Joblist
+	 */
 	public void sendVersionRequest() {
 		jobs.add(sendCMD.SENDVERSION);
 		synchronized(synchonizer) {
@@ -150,6 +178,9 @@ public class BTSender extends Thread {
 		}
 	}
 
+	/**
+	 * add a new Job to the Joblist
+	 */
 	public void sendResetRequest() {
 		jobs.add(sendCMD.SENDRESET);			
 		synchronized(synchonizer) {
@@ -157,13 +188,19 @@ public class BTSender extends Thread {
 		}
 	}
 
+	/**
+	 * add a new Job to the Joblist
+	 */
 	public void sendBuzzerRequest() {
 		jobs.add(sendCMD.SENDBUZZER);			
 		synchronized(synchonizer) {
 			synchonizer.notifyAll();
 		}
 	}
-	
+
+	/**
+	 * add a new Job to the Joblist
+	 */
 	public void sendPulseRequest() {
 		jobs.add(sendCMD.SENDPULSE);			
 		synchronized(synchonizer) {
@@ -171,6 +208,9 @@ public class BTSender extends Thread {
 		}
 	}
 	
+	/**
+	 * send the Ping Command to the cestbelt
+	 */
 	private synchronized void sendPing() {
 		if(out != null) {
 			byte[] toSend = new byte[8];
@@ -188,13 +228,15 @@ public class BTSender extends Thread {
 				out.write(toSend);
 				out.flush();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				
 			}
 			
 		}
 	}
 
+	/**
+	 * send a reset command to the cestbelt
+	 */
 	private synchronized void sendReset() {
 		if(out != null) {
 			byte[] toSend = new byte[8];
@@ -211,14 +253,15 @@ public class BTSender extends Thread {
 			try {
 				out.write(toSend);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			
 			}
 		}
 	}
 	
 
-	
+	/**
+	 * send a request to the cestbelt for initiate a new sending of data
+	 */
 	private synchronized void sendPulse() {
 		if(out != null) {
 			byte[] toSend = new byte[10];
@@ -239,13 +282,15 @@ public class BTSender extends Thread {
 				out.write(toSend);
 				out.flush();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
 			
 		}
 	}
 	
+	/**
+	 * sent an ACK to the cestbelt with the given packetnumber
+	 * @param packetNumber the number to ACK
+	 */
 	synchronized void sendAcknowledge(byte packetNumber) {
 		if(out != null) {
 			byte[] toSend = new byte[9];
@@ -270,6 +315,10 @@ public class BTSender extends Thread {
 		}
 	}
 	
+	/**
+	 * reject the <code>packetNumber</code> packet
+	 * @param packetNumber
+	 */
 	synchronized void sendReject(byte packetNumber) {
 		if(out != null) {
 			byte[] toSend = new byte[9];
@@ -294,6 +343,9 @@ public class BTSender extends Thread {
 		}
 	}
 	
+	/**
+	 * crap
+	 */
 	private synchronized void sendVersion() {
 		if(out != null) {
 			byte[] toSend = new byte[8];
@@ -317,6 +369,9 @@ public class BTSender extends Thread {
 		}
 	}
 	
+	/**
+	 * enable the beeper on the cestbelt
+	 */
 	private synchronized void sendBuzzer() {
 		if(out != null) {
 			byte[] toSend = new byte[8];
@@ -340,6 +395,10 @@ public class BTSender extends Thread {
 		}
 	}
 	
+	/**
+	 * increment and return the new packetnumber
+	 * @return
+	 */
 	public short getPacketnumber() {
 		if(PACKETNUMBER >= 251) {
 			PACKETNUMBER = 0;
@@ -347,7 +406,11 @@ public class BTSender extends Thread {
 		return ++PACKETNUMBER;
 	}
 	
-	
+	/**
+	 * Singleton
+	 * @param o
+	 * @return
+	 */
 	public static BTSender getInstance(OutputStream o) {
 		if(instance == null) {
 			instance = new BTSender(o);

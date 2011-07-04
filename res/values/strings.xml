@@ -5,7 +5,7 @@
     <string name="btnRescanText">Scan for cestbelt</string>
     <string name="btnShowPairedText">Show paired devices</string>
     <string name="btnPing">send Ping</string>
-    <string name="btnVersion">request cestbelt version</string>
+    <string name="btnVersion">request pulse data</string>
     <string name="btnReset">reset cestbelt</string>
     <string name="btnBuzzer">buzzzzzzzz</string>
     <string name="txtDev">used device:</string>

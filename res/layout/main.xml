@@ -15,14 +15,14 @@
 <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:id="@+id/txtDev" android:text="@string/txtDev"></TextView>
 <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:id="@+id/txtPulse" android:text="@string/txtPulse"></TextView>
 
-	<com.cestbelt.Panel android:id="@+id/SurfaceView" android:layout_height="230px" android:layout_width="400px"></com.cestbelt.Panel>
+	<com.cestbelt.Panel android:id="@+id/SurfaceView" android:layout_height="230px" android:layout_width="match_parent"></com.cestbelt.Panel>
 	
 	<ScrollView android:layout_height="match_parent" android:id="@+id/scrollView1" android:layout_width="match_parent">
     <LinearLayout android:layout_width="match_parent" android:id="@+id/linearLayout1" android:layout_height="match_parent" android:orientation="vertical">
         <Button android:id="@+id/btnConnect" android:layout_height="wrap_content" android:text="@string/btnConnect" android:layout_width="match_parent"></Button>
         <Button android:id="@+id/btnRescan" android:layout_height="wrap_content" android:text="@string/btnRescanText" android:layout_width="match_parent"></Button>
         <Button android:id="@+id/btnPing" android:layout_height="wrap_content" android:text="@string/btnPing" android:layout_width="match_parent"></Button>
-        <Button android:id="@+id/btnVersion" android:layout_height="wrap_content" android:text="@string/btnVersion" android:layout_width="match_parent"></Button>
+        <Button android:id="@+id/btnVersion" android:layout_height="wrap_content" android:layout_width="match_parent" android:text="@string/btnVersion"></Button>
         <Button android:id="@+id/btnReset" android:layout_height="wrap_content" android:text="@string/btnReset" android:layout_width="match_parent"></Button>
         <Button android:id="@+id/btnBuzzer" android:layout_height="wrap_content" android:text="@string/btnBuzzer" android:layout_width="match_parent"></Button>
         <Button android:id="@+id/btnDisconnect" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/btnDisconnect"></Button>

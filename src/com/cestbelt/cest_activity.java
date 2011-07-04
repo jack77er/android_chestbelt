@@ -16,6 +16,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -24,182 +25,218 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public class cest_activity extends Activity {
-	
+	// final Context for forwading to subclasses
 	private final Context mainContext = this;
+	// global definition of the BluetoothAdapter
 	BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
 	
+	// int for the BT Intent
 	public final static int REQUEST_ENABLE_BT = 0;
+	
+	// status flags for recovering bluetooth connections
 	private boolean btWasEnabled = true;
 	private boolean btisEnabled = false;
 	
+	// int for the BT waiting dialog
 	static final int DIALOG_BT_SCANNING = 1;
+	
+	// flags for the manual connection 
 	private boolean MANUAL_CONNECT = false;
 	private boolean MANUAL_CONNECT_FOUND = false;
-	private SurfaceView surfaceView;
-	private final int PULSE_ACTIVITY_REQUEST_CODE = 2;
 	
+	// global definition of the pulseview for forwarding
+	private SurfaceView surfaceView;
+	
+	// global list of found remote devices
 	private ArrayList<BluetoothDevice> remoteDevices;
+	
+	// the used device
 	private BluetoothDevice choosenDevice;
 
 	
     /** Called when the activity is first created. */
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		// create a List for all found devices
+		remoteDevices = new ArrayList<BluetoothDevice>();
+		
+		/* Intent filters for all used intents */
+		// Bluetoothdevice found
+		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+		registerReceiver(bcastReceiver, filter); 
+		// Bluetoothstate changed
+		filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+		registerReceiver(bcastReceiver, filter);
+		// Bluetoothdiscovery finished
+		filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+		registerReceiver(bcastReceiver, filter); 
+		
+		// recover old device from shared preferences
+		SharedPreferences p = getSharedPreferences("prevBelt", MODE_PRIVATE);
+		String oldMAC = p.getString("prevMAC", "00:00:00:00:00:00");
 
-        
-        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        registerReceiver(bcastReceiver, filter); // Don't forget to unregister during onDestroy
-        filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-        registerReceiver(bcastReceiver, filter); // Don't forget to unregister during onDestroy
-        filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-        registerReceiver(bcastReceiver, filter); // Don't forget to unregister during onDestroy
-        
-        // recover old entry
-        
-        remoteDevices = new ArrayList<BluetoothDevice>();
-        SharedPreferences p = getSharedPreferences("prevBelt", MODE_PRIVATE);
-        String oldMAC = p.getString("prevMAC", "00:00:00:00:00:00");
-        
-        if(!oldMAC.equals("00:00:00:00:00:00")) {
-        	if(adapter.isEnabled() && adapter.getState() == adapter.STATE_ON && !adapter.isDiscovering())
-        	choosenDevice = adapter.getRemoteDevice(oldMAC);
-        } 
-        
-        
-        setContentView(R.layout.main);
-        
-        
-        final Panel surfaceView = (Panel) findViewById(R.id.SurfaceView);
-      if(surfaceView != null){
-      	this.surfaceView = surfaceView;
-      }
-        
-        ((Button)findViewById(R.id.btnRescan)).setOnClickListener(new OnClickListener() {
+		if (!oldMAC.equals("00:00:00:00:00:00")) {
+			// preferences found
+			if (adapter.isEnabled() && adapter.getState() == adapter.STATE_ON
+					&& !adapter.isDiscovering())
+				choosenDevice = adapter.getRemoteDevice(oldMAC);
+		}
+		
+		// set primary content view 
+		setContentView(R.layout.main);
+		
+		// find pulsepanel and set it as the global one
+		final Panel surfaceView = (Panel) findViewById(R.id.SurfaceView);
+		if (surfaceView != null) {
+			this.surfaceView = surfaceView;
+		}
 
+		// Actionlistener for the Rescan Button
+		((Button) findViewById(R.id.btnRescan))
+				.setOnClickListener(new OnClickListener() {
 
-        	
-			@Override
-			public void onClick(View arg0) {
-				scanForDevices();
-			}
-          });
-        
-        ((Button)findViewById(R.id.btnPing)).setOnClickListener(new OnClickListener() {
-
-			@Override
-			public void onClick(View arg0) {
-				try {
-					BTHandler.getInstance(choosenDevice,mainContext).sendPingRequest();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-          });
-        
-        ((Button)findViewById(R.id.btnVersion)).setOnClickListener(new OnClickListener() {
-
-			@Override
-			public void onClick(View arg0) {
-				try {
-					BTHandler.getInstance(choosenDevice,mainContext).sendPulseRequest();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-          });
-        
-        ((Button)findViewById(R.id.btnReset)).setOnClickListener(new OnClickListener() {
-
-			@Override
-			public void onClick(View arg0) {
-				try {
-					BTHandler.getInstance(choosenDevice,mainContext).sendResetRequest();
-					BTHandler.destroyInstance();
-					
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-          });
-        
-        ((Button)findViewById(R.id.btnConnect)).setOnClickListener(new OnClickListener() {
-
-			@Override
-			public void onClick(View arg0) {
-				try {
-					if(choosenDevice != null) {
-						MANUAL_CONNECT = true;
-						MANUAL_CONNECT_FOUND = false;
+					@Override
+					public void onClick(View arg0) {
 						scanForDevices();
 					}
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-          });
+				});
 
-        ((Button)findViewById(R.id.btnBuzzer)).setOnClickListener(new OnClickListener() {
+		// Actionlistener for the Ping button
+		((Button) findViewById(R.id.btnPing))
+				.setOnClickListener(new OnClickListener() {
 
-			@Override
-			public void onClick(View arg0) {
-				try {
-					BTHandler.getInstance(choosenDevice,mainContext).sendBuzzerRequest();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-          });
-        
-        
-        ((Button)findViewById(R.id.btnPulseActivity)).setOnClickListener(new OnClickListener() {
+					@Override
+					public void onClick(View arg0) {
+						try {
+							BTHandler.getInstance(choosenDevice, mainContext)
+									.sendPingRequest();
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				});
 
-			@Override
-			public void onClick(View arg0) {
-				try {
-					
+		// Actionlistener for the pulse request button
+		((Button) findViewById(R.id.btnVersion))
+				.setOnClickListener(new OnClickListener() {
 
-//					t.start();
-				for(int i =0; i <100; i++){
-			        surfaceView.addPulseValue(50);
-			        surfaceView.addPulseValue(50);
-			        surfaceView.addPulseValue(50);
-			        surfaceView.addPulseValue(50);
-			        surfaceView.addPulseValue(90);
-				}
-				} catch (Exception e) {
-					e.printStackTrace();
-				
-				}
-			}
-          });
-        
-        ((Button)findViewById(R.id.btnDisconnect)).setOnClickListener(new OnClickListener() {
+					@Override
+					public void onClick(View arg0) {
+						try {
+							BTHandler.getInstance(choosenDevice, mainContext)
+									.sendPulseRequest();
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				});
 
-        	
-        	
-			@Override
-			public void onClick(View arg0) {
-				try {
-					BTHandler.getInstance(choosenDevice, mainContext).closeConnection();
-					
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-          });
-    	if(!adapter.isEnabled()) {
-    		// bluetooth disabled
-    		Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-    		startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);    	
-    	}
-    	
-    }
+		// Actionlistener for the reset button
+		((Button) findViewById(R.id.btnReset))
+				.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View arg0) {
+						try {
+							BTHandler.getInstance(choosenDevice, mainContext)
+									.sendResetRequest();
+							BTHandler.destroyInstance();
+
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				});
+
+		// Actionlistener for the connect button
+		((Button) findViewById(R.id.btnConnect))
+				.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View arg0) {
+						try {
+							if (choosenDevice != null) {
+								// if choosen device is not empty try a scan
+								// and detect the device
+								MANUAL_CONNECT = true;
+								MANUAL_CONNECT_FOUND = false;
+								scanForDevices();
+							}
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				});
+
+		// Actionlistener for the beep button
+		((Button) findViewById(R.id.btnBuzzer))
+				.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View arg0) {
+						try {
+							BTHandler.getInstance(choosenDevice, mainContext)
+									.sendBuzzerRequest();
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				});
+
+		// Actionlistener for the pulseview button
+		((Button) findViewById(R.id.btnPulseActivity))
+				.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View arg0) {
+						try {
+							// add some crappy values
+							for (int i = 0; i < 100; i++) {
+								surfaceView.addPulseValue(50);
+								surfaceView.addPulseValue(50);
+								surfaceView.addPulseValue(50);
+								surfaceView.addPulseValue(50);
+								surfaceView.addPulseValue(90);
+							}
+						} catch (Exception e) {
+							e.printStackTrace();
+
+						}
+					}
+				});
+
+
+		// Actionlistener for the close connection button
+		((Button) findViewById(R.id.btnDisconnect))
+				.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View arg0) {
+						try {
+							BTHandler.getInstance(choosenDevice, mainContext)
+									.closeConnection();
+
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				});
+
+		// last action in onCreate: enable Bluetooth if necessary  
+		if (!adapter.isEnabled()) {
+			// bluetooth disabled
+			Intent enableBtIntent = new Intent(
+					BluetoothAdapter.ACTION_REQUEST_ENABLE);
+			startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+		}
+
+	}
     
     @Override
     protected void onResume() {
     	super.onResume();
+    	// recover last used device
         SharedPreferences p = getSharedPreferences("prevBelt", MODE_PRIVATE);
         String oldMAC = p.getString("prevMAC", "00:00:00:00:00:00");
         
@@ -214,17 +251,19 @@ public class cest_activity extends Activity {
     }
     
     protected void scanForDevices() {
+    	// if bluetooth is disabled
 		if(!adapter.isEnabled()) {
-    		// bluetooth disabled
+    		// bluetooth disabled - enable it
     		Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
     		startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);    	
     	} else {		    		
     		// interrupt discovery if already started
     		adapter.cancelDiscovery();
     		if(adapter.startDiscovery()) {
-    			//Toast.makeText(getApplicationContext(), "scan initiated", Toast.LENGTH_SHORT).show();
+    			// scanning started - lets show the waiting dialog
     			showDialog(DIALOG_BT_SCANNING);
     		} else {
+    			// fallback
     			Toast.makeText(getApplicationContext(), "scan failed", Toast.LENGTH_SHORT).show();
     		}
     	}	
@@ -233,33 +272,31 @@ public class cest_activity extends Activity {
     @Override
     protected void onPause() {
     	super.onPause();
+    	// save last used device
     	SharedPreferences p = getSharedPreferences("prevBelt", MODE_PRIVATE);
     	SharedPreferences.Editor e = p.edit();
     	if(choosenDevice != null) {
     		e.putString("prevMAC", choosenDevice.getAddress());
         	e.commit();
-    	}
-//    	try {
-//			th.join();
-//		} catch (InterruptedException e1) {
-//			// TODO Auto-generated catch block
-//			e1.printStackTrace();
-//		}
-    	
+    	}    	
     }
 
 	@Override
     protected void onDestroy() {
+
+		super.onDestroy();
+		
+		// clean all registered receivers
 		unregisterReceiver(bcastReceiver);
         
-		super.onDestroy();
+		// save used device in shared preferences
     	SharedPreferences p = getSharedPreferences("prevBelt", MODE_PRIVATE);
     	SharedPreferences.Editor e = p.edit();
     	if(choosenDevice != null) {
     		e.putString("prevMAC", choosenDevice.getAddress());
         	e.commit();
     	}
-        
+        // close the bluetooth connection if necessary
     	BTHandler.getInstance(choosenDevice, mainContext).closeConnection();
     	BTHandler.destroyInstance();
     	
@@ -271,9 +308,12 @@ public class cest_activity extends Activity {
         
 	}
 
+	/**
+	 * onStop Event (see Android Documentation)
+	 */
 	protected void onStop() {
 		super.onStop();
-		
+		// save used device in shared preferences
     	SharedPreferences p = getSharedPreferences("prevBelt", MODE_PRIVATE);
     	SharedPreferences.Editor e = p.edit();
     	if(choosenDevice != null) {
@@ -287,9 +327,11 @@ public class cest_activity extends Activity {
 	@Override
 	protected Dialog onCreateDialog(int id) {
 		if (id == DIALOG_BT_SCANNING) {
+			// bluetooth waiting dialog
 			ProgressDialog loadingDialog = new ProgressDialog(this){
 				@Override
 				public void onBackPressed(){
+					// discovery was aborted by the user
 					adapter.cancelDiscovery();
 				}
 				
@@ -310,30 +352,47 @@ public class cest_activity extends Activity {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+            // extract the found device out of this intent
+            try {
+				BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+			} catch (Exception e1) {
+				// nothing found
+			}
+            
             if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
+            	// bluetooth state changed
                 int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
                 switch (state) {
                 case BluetoothAdapter.STATE_ON:
+                	// bt is on
                 	Toast.makeText(getApplicationContext(), "bt enabled", Toast.LENGTH_SHORT).show();
                 	btWasEnabled = false;
                 	btisEnabled = true;
                     break;
                 case BluetoothAdapter.STATE_TURNING_OFF:
+                	// bt is turning off
                 	Toast.makeText(getApplicationContext(), "bt disabled", Toast.LENGTH_SHORT).show();
                 	btisEnabled = false;
                     break;
                 }
             } else if(action.equals(BluetoothDevice.ACTION_FOUND)) {
+            	// device found during discovery
             	if(!remoteDevices.contains((BluetoothDevice) intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE))) {
+            		// device not already in list
             		BluetoothDevice tmp = (BluetoothDevice) intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+            		// get the device (again...)
             		if(MANUAL_CONNECT && tmp.getAddress().equals(choosenDevice.getAddress())) {
+            			// should directly connect if manual connect 
             			MANUAL_CONNECT_FOUND = true;
+            			// stop discovery
             			adapter.cancelDiscovery();
+            			// close waiting dialog
             			dismissDialog(DIALOG_BT_SCANNING);
             			choosenDevice = tmp;
+            			// connect to the device
             			connectToDevice();
             		}
+            		// add my device to the global list
             		remoteDevices.add(tmp);
             	}
             } else if(action.equals(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)) {
@@ -344,9 +403,10 @@ public class cest_activity extends Activity {
             		}            		
             		MANUAL_CONNECT = false;
             		MANUAL_CONNECT_FOUND = false;
+        			// close waiting dialog
             		dismissDialog(DIALOG_BT_SCANNING);
             	} else {
-            		// new scan completed
+            		// new scan completed - create a list to choose one
 	            	AlertDialog.Builder builder = new AlertDialog.Builder(mainContext);
 	            	builder.setTitle("Choose a Device");
 	            	
@@ -357,6 +417,7 @@ public class cest_activity extends Activity {
 	            	
 	            	builder.setItems(items, new DialogInterface.OnClickListener() {
 	            	    public void onClick(DialogInterface dialog, int item) {
+	            	    	// device from list choosen - add it to the lastuse preference
 	            	        choosenDevice = remoteDevices.get(item);
 	            	    	SharedPreferences p = getSharedPreferences("prevBelt", MODE_PRIVATE);
 	            	    	SharedPreferences.Editor e = p.edit();
@@ -366,11 +427,14 @@ public class cest_activity extends Activity {
 	            	        	TextView v = (TextView) findViewById(R.id.txtDev);
 	            	        	v.setText("used device: " + choosenDevice.getAddress());
 	            	    	}
+	            	    	// connect to the found device
 	            	        connectToDevice();
 	            	    }
 	            	});
-	            	
+
+        			// close waiting dialog
 	            	dismissDialog(DIALOG_BT_SCANNING);
+	            	// show alert
 	            	AlertDialog alert = builder.create();
 	            	alert.show();
             	}
@@ -378,7 +442,9 @@ public class cest_activity extends Activity {
         }
     };
     
-    
+    /**
+     * creates a list of all paired devices
+     */
     private void listPairedDevices() {
     	final Set<BluetoothDevice> pairedDevices = adapter.getBondedDevices();
     	// If there are paired devices
@@ -406,10 +472,11 @@ public class cest_activity extends Activity {
                 		}
                 		i++;
             	    }
+                	// connect to the selected device
         	        connectToDevice();
         	    }
         	});
-        	
+        	// show the alert
         	AlertDialog alert = builder.create();
         	alert.show();
     	} else {
@@ -417,13 +484,20 @@ public class cest_activity extends Activity {
     	}
     }
     
+    /**
+     * initiate the actual connection and create the handler thread
+     */
     private void connectToDevice() {
     	if(choosenDevice != null) {
+    		// device is present
     		if(BluetoothAdapter.checkBluetoothAddress(choosenDevice.getAddress())) {
+    			// address is valid
     			BTHandler r = BTHandler.getInstance(choosenDevice, this);
     			if(r.isAlive()) {
+    				// if is already connected close the connection
     				r.closeConnection();    				
     			}
+    			// set parameters ans run the thread
     			r.setParent(this);
     			r.setDisplayPanel(surfaceView);
     			r.start();
@@ -433,9 +507,13 @@ public class cest_activity extends Activity {
     	}
     }
     
+    /**
+     * local broadcastReciver for ActivityResult
+     * @deprecated
+     */
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if (requestCode == REQUEST_ENABLE_BT) {
+		/*if (requestCode == REQUEST_ENABLE_BT) {
 			if (resultCode == RESULT_CANCELED) {
 				Toast.makeText(getApplicationContext(), "bt not available", Toast.LENGTH_SHORT).show();	
 				btisEnabled = false;
@@ -444,34 +522,6 @@ public class cest_activity extends Activity {
 				btWasEnabled = false;
 				btisEnabled = true;
 			}
-		}				
-	}
-	
-
-//	Thread t = new Thread(){
-//		
-//		public void run(){
-//			for(int i =0; i <100; i++){
-//		        ((Panel)surfaceView).addPulseValue(50);
-//			}
-//		}
-//		
-//	};
-	
-//	public void test(Thread t){
-//		Intent i = new Intent();
-//        i.putExtra("pulseValue", 90);
-//        i.setAction(com.cestbelt.PulseActivity.NEW_PULSE_DATA);
-//        ((Activity)mainContext).sendBroadcast(i);
-//        ((Activity)mainContext).sendBroadcast(i);
-//        i.putExtra("pulseValue", 190);
-//        ((Activity)mainContext).sendBroadcast(i);
-//        i.putExtra("pulseValue", 190);
-//        ((Activity)mainContext).sendBroadcast(i);
-//        synchronized (t) {
-//        	t.notify();
-//		}
-        
-	
-    
+		}*/				
+	}    
 }

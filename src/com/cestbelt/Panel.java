@@ -91,7 +91,7 @@ class Panel extends SurfaceView implements SurfaceHolder.Callback {
                
                // markers on y-axis
                paint.setTextSize(20);
-               paint.setTextScaleX(1.4f);
+               paint.setTextScaleX(1);
                canvas.drawLine(45, 220,349, 220,paint);
                canvas.drawText("0", 30, 220, paint);
                canvas.drawLine(45, 170,349, 170,paint);
