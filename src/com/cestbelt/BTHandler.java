@@ -15,6 +15,7 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
+import android.view.SurfaceView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -81,7 +82,7 @@ public class BTHandler extends Thread {
 	InputStream in;
 	OutputStream out;
 	
-	private Panel displayPanel;
+	private SurfaceView displayPanel;
 
 	private boolean RESET;
 	private boolean SENDPING;
@@ -98,12 +99,12 @@ public class BTHandler extends Thread {
 		remote = dev;
 	}	
 	
-	public Panel getDisplayPanel() {
+	public SurfaceView getDisplayPanel() {
 		return displayPanel;
 	}
 
-	public void setDisplayPanel(Panel displayPanel) {
-		this.displayPanel = displayPanel;
+	public void setDisplayPanel(SurfaceView surfaceView) {
+		this.displayPanel = surfaceView;
 	}
 
 	public Context getParent() {
@@ -205,18 +206,19 @@ public class BTHandler extends Thread {
 							    		    public void run() {
 									    		TextView v = (TextView) ((Activity) parent).findViewById(R.id.txtPulse);
 					            	        	v.setText("current pulse: " + String.valueOf((int)buffer[220]));
+					            	        	if(displayPanel != null) {
+													((Panel)displayPanel).addPulseValue((int)buffer[220]);
+													/*Intent myIntent = new Intent(parent.getApplicationContext(), PulseActivity.class);
+											        Bundle myBundle = new Bundle();
+											        myBundle.putInt("pulseValue", (int)buffer[220]);
+											        myIntent.putExtras(myBundle);
+											        parent.getApplicationContext().startActivity(myIntent);*/
+												}
 					            	        	playAudio();
 						    		        }
 							    		});
 									}
-									//if(displayPanel != null) {
-									//	displayPanel.addPulseValue((int)buffer[220]);
-										/*Intent myIntent = new Intent(parent.getApplicationContext(), PulseActivity.class);
-								        Bundle myBundle = new Bundle();
-								        myBundle.putInt("pulseValue", (int)buffer[220]);
-								        myIntent.putExtras(myBundle);
-								        parent.getApplicationContext().startActivity(myIntent);*/
-									//}
+									
 								
 	
 									

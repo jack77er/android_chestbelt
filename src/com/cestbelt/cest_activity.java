@@ -422,10 +422,10 @@ public class cest_activity extends Activity {
     		if(BluetoothAdapter.checkBluetoothAddress(choosenDevice.getAddress())) {
     			BTHandler r = BTHandler.getInstance(choosenDevice, this);
     			if(r.isAlive()) {
-    				r.closeConnection();
-    				
+    				r.closeConnection();    				
     			}
     			r.setParent(this);
+    			r.setDisplayPanel(surfaceView);
     			r.start();
     		}
     	} else {
