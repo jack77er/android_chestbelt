@@ -9,11 +9,10 @@ import java.util.TimerTask;
 import java.util.UUID;
 
 import android.app.Activity;
-//import android.bluetooth.BluetoothAdapter;
-//import android.bluetooth.BluetoothDevice;
-//import android.bluetooth.BluetoothSocket;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.content.Context;
-import android.content.Intent;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.widget.TextView;
@@ -77,8 +76,8 @@ public class BTHandler extends Thread {
 	private byte PACKETNUMBER				  = 0x0;
 	
 	
-//	BluetoothSocket sock;	
-//	BluetoothDevice remote;	  
+	BluetoothSocket sock;	
+	BluetoothDevice remote;	  
 	InputStream in;
 	OutputStream out;
 	
@@ -94,10 +93,10 @@ public class BTHandler extends Thread {
 	private boolean RUNNING = true;
 	private MediaPlayer mMediaPlayer;
 	
-//	public BTHandler(BluetoothDevice dev, Context p) {
-//		parent = p;
-//		remote = dev;
-//	}	
+	public BTHandler(BluetoothDevice dev, Context p) {
+		parent = p;
+		remote = dev;
+	}	
 	
 	public Panel getDisplayPanel() {
 		return displayPanel;
@@ -127,26 +126,26 @@ public class BTHandler extends Thread {
     	
         
 		
-//    	try {	
-//			sock = remote.createInsecureRfcommSocketToServiceRecord(MY_UUID);
-//    		// For Toasts ...
-//    		sock.connect();
-//			//t.cancel(); // kill watchdog
-//			//Toast.makeText(parent, "connected to " + remote.getAddress(), Toast.LENGTH_SHORT).show();
-//    		((Activity)parent).runOnUiThread(new Runnable() {
-//    		    public void run() {
-//    		        Toast.makeText(parent, "connected to " + remote.getAddress(), Toast.LENGTH_SHORT).show();
-//    		    }
-//    		});
-//			in = sock.getInputStream();
-//			out = sock.getOutputStream();
-//			sender = BTSender.getInstance(out);
-//			sender.start();
-//			
-//		} catch (IOException e1) {
-//			e1.printStackTrace();
-//			return;
-//		}
+    	try {	
+			sock = remote.createInsecureRfcommSocketToServiceRecord(MY_UUID);
+    		// For Toasts ...
+    		sock.connect();
+			//t.cancel(); // kill watchdog
+			//Toast.makeText(parent, "connected to " + remote.getAddress(), Toast.LENGTH_SHORT).show();
+    		((Activity)parent).runOnUiThread(new Runnable() {
+    		    public void run() {
+    		        Toast.makeText(parent, "connected to " + remote.getAddress(), Toast.LENGTH_SHORT).show();
+    		    }
+    		});
+			in = sock.getInputStream();
+			out = sock.getOutputStream();
+			sender = BTSender.getInstance(out);
+			sender.start();
+			
+		} catch (IOException e1) {
+			e1.printStackTrace();
+			return;
+		}
 		
     	while (RUNNING) {
             if (in != null) {
@@ -345,14 +344,14 @@ public class BTHandler extends Thread {
 						// hard killing thread
 						instance.interrupt();
 						instance = null;
-//						BluetoothAdapter.getDefaultAdapter().disable();
-//						BluetoothAdapter.getDefaultAdapter().enable();
+						BluetoothAdapter.getDefaultAdapter().disable();
+						BluetoothAdapter.getDefaultAdapter().enable();
 						
 					}}, 3000);
 				// TODO manchmal klemmt er hier wenn er ins onDestroy kippt
-//				if( sock != null) {
-//					sock.close();						
-//				}
+				if( sock != null) {
+					sock.close();						
+				}
 				wd.cancel();
 				wd.purge();
 			} catch (Exception e) {
@@ -573,12 +572,12 @@ public class BTHandler extends Thread {
 	 * @param dev
 	 * @return
 	 */
-//	public static BTHandler getInstance(BluetoothDevice dev, Context p) {
-//		if (instance == null) {
-//			instance = new BTHandler(dev,p);
-//		}
-//		return instance;
-//	}
+	public static BTHandler getInstance(BluetoothDevice dev, Context p) {
+		if (instance == null) {
+			instance = new BTHandler(dev,p);
+		}
+		return instance;
+	}
 
 	public void sendPingRequest() {
 		if(sender != null) sender.sendPingRequest();
