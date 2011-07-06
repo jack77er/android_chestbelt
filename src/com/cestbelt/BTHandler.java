@@ -80,6 +80,8 @@ public class BTHandler extends Thread {
 	static final byte STARTBYTE 			  = (byte) 0xfc;
 	static final byte STOPBYTE				  = (byte) 0xfd;
 	
+	
+	
 	private byte PACKETNUMBER				  = 0x0;
 	
 	// the choosen remote device
@@ -97,6 +99,9 @@ public class BTHandler extends Thread {
 	
 	// variable for thread running
 	private boolean RUNNING = true;
+	
+	// for answering PING Requests
+	private boolean PING_SEND = false;
 	
 	// mediaplayer for playing the sound (ping) 
 	private MediaPlayer mMediaPlayer;
@@ -287,6 +292,13 @@ public class BTHandler extends Thread {
 									break;	
 								case CMD_ACKNOWLEDGE:
 									System.out.println("income: CMD_ACKNOWLEDGE");
+									if(this.PING_SEND) {
+										((Activity)parent).runOnUiThread(new Runnable() {
+							    		    public void run() {
+							    		    	Toast.makeText(parent, "Pong", Toast.LENGTH_SHORT).show();
+						    		        }
+							    		});
+									}
 									break;	
 								case CMD_NOT_ACKNOWLEDGE:
 									System.out.println("income: CMD_NOT_ACKNOWLEDGE");
@@ -454,6 +466,7 @@ public class BTHandler extends Thread {
 	
 	/* send Request through the sender */
 	public void sendPingRequest() {
+		this.PING_SEND = true;
 		if(sender != null) sender.sendPingRequest();
 	}
 	

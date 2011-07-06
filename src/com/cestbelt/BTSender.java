@@ -265,7 +265,7 @@ public class BTSender extends Thread {
 	private synchronized void sendPulse() {
 		if(out != null) {
 			byte[] toSend = new byte[10];
-			System.out.println("outgoing: CMD_REQUEST_DATA");
+			System.out.println("outgoing: CMD_REQUEST_DATA (CMD_TX_DATA_START)");
 
 			toSend[0] = BTHandler.STARTBYTE;						// Startflag
 			toSend[1] = (byte) (0xff & getPacketnumber());				// running Packetnumber
