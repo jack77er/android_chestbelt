@@ -293,6 +293,7 @@ public class BTHandler extends Thread {
 								case CMD_ACKNOWLEDGE:
 									System.out.println("income: CMD_ACKNOWLEDGE");
 									if(this.PING_SEND) {
+										this.PING_SEND = false;
 										((Activity)parent).runOnUiThread(new Runnable() {
 							    		    public void run() {
 							    		    	Toast.makeText(parent, "Pong", Toast.LENGTH_SHORT).show();
